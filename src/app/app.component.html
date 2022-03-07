@@ -1,0 +1,107 @@
+<mat-toolbar class="tools">
+  <div class="spacer">
+    <button mat-button (click)="uploadFile()">
+      <mat-icon>upload_file</mat-icon>
+      Open
+    </button>
+
+    <div class="divider"></div>
+
+    <button mat-button [matMenuTriggerFor]="saveMenu" *ngIf="canvas.hasImage">
+      Save
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #saveMenu="matMenu">
+      <button mat-menu-item (click)="downloadPng()">
+        <mat-icon>download</mat-icon>
+        Download image
+      </button>
+      <button mat-menu-item (click)="copyImage()">
+        <mat-icon>content_copy</mat-icon>
+        Copy image
+      </button>
+      <button mat-menu-item (click)="copyUrl()">
+        <mat-icon>link</mat-icon>
+        Copy link to image
+      </button>
+      <button mat-menu-item (click)="printAssembly()">
+        <mat-icon>print</mat-icon>
+        Print assembly guide
+      </button>
+    </mat-menu>
+
+    <div class="divider" *ngIf="canvas.hasImage"></div>
+  </div>
+
+  <mat-button-toggle-group
+    [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
+    name="tool"
+    aria-label="Tool"
+    [(ngModel)]="canvas.activeTool"
+  >
+    <mat-button-toggle
+      [value]="Tool.DRAW"
+      matTooltip="Draw single pixels"
+      [style]="{ borderBottomColor: canvas.activeColor }"
+    >
+      <mat-icon>edit</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle
+      [value]="Tool.FILL"
+      matTooltip="Fill area"
+      [style]="{ borderBottomColor: canvas.activeColor }"
+    >
+      <mat-icon>format_color_fill</mat-icon>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <button
+    [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
+    mat-button
+    class="color-picker"
+  >
+    <mat-icon class="label">colorize</mat-icon>
+    <input type="color" [(ngModel)]="canvas.activeColor" />
+  </button>
+
+  <div class="divider" [hidden]="mode !== Mode.DRAW || !canvas.hasImage"></div>
+
+  <div class="colors" [hidden]="mode !== Mode.DRAW || !canvas.hasImage">
+    <button
+      mat-button
+      *ngFor="let entry of canvas.colorCounts | async | keyvalue"
+      [style.backgroundColor]="entry.key"
+      (click)="canvas.activeColor = entry.key"
+    ></button>
+  </div>
+
+  <div class="spacer-right">
+    <nav mat-tab-nav-bar *ngIf="canvas.hasImage">
+      <a mat-tab-link (click)="mode = Mode.DRAW" [active]="mode === Mode.DRAW">
+        <mat-icon>edit</mat-icon> Draw
+      </a>
+      <a
+        mat-tab-link
+        (click)="mode = Mode.ASSEMBLE"
+        [active]="mode === Mode.ASSEMBLE"
+      >
+        <mat-icon>grid_on</mat-icon> Assemble
+      </a>
+    </nav>
+  </div>
+</mat-toolbar>
+
+<app-canvas-editor
+  #canvas
+  [hidden]="mode !== Mode.DRAW || !(canvas.colorCounts | async)"
+></app-canvas-editor>
+
+<h2 *ngIf="!(canvas.colorCounts | async)">
+  Open, paste, or drop a small pixel art image.
+</h2>
+
+<app-instructions
+  [hidden]="mode !== Mode.ASSEMBLE"
+  *ngIf="canvas.pixels | async as pixels"
+  [pixels]="pixels"
+></app-instructions>

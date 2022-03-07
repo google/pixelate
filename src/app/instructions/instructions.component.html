@@ -1,0 +1,98 @@
+<table class="grid">
+  <tr>
+    <td></td>
+    <td
+      *ngFor="let c of pixels[0]; let index = index"
+      class="toggle"
+      (click)="completedCols.set(index, !(completedCols.get(index) ?? false))"
+    >
+      {{ index + 1 }}
+    </td>
+    <td></td>
+  </tr>
+  <tr *ngFor="let row of pixels; let rowI = index">
+    <td
+      class="toggle"
+      (click)="completedRows.set(rowI, !(completedRows.get(rowI) ?? false))"
+    >
+      {{ rowI + 1 }}
+    </td>
+    <td
+      *ngFor="let col of row; let colI = index"
+      [style]="{ backgroundColor: col }"
+      [class.completed]="completedRows.get(rowI) || completedCols.get(colI)"
+    >
+      {{ indices.get(col) }}
+    </td>
+    <td
+      class="toggle"
+      (click)="completedRows.set(rowI, !(completedRows.get(rowI) ?? false))"
+    >
+      {{ rowI + 1 }}
+    </td>
+  </tr>
+  <tr>
+    <td></td>
+    <td
+      *ngFor="let c of pixels[0]; let index = index"
+      class="toggle"
+      (click)="completedCols.set(index, !(completedCols.get(index) ?? false))"
+    >
+      {{ index + 1 }}
+    </td>
+    <td></td>
+  </tr>
+</table>
+
+<div class="row">
+  <table>
+    <thead>
+      <tr>
+        <th>Color</th>
+        <th>Count</th>
+        <th>BG</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of colors">
+        <td [style]="{ backgroundColor: row.color }" class="text-center">
+          {{ row.index }}
+        </td>
+        <td class="text-right">{{ row.count }}</td>
+        <td>
+          <mat-checkbox
+            [(ngModel)]="background[row.color]"
+            (change)="ngOnChanges()"
+          ></mat-checkbox>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="key-value">
+    <thead>
+      <tr>
+        <td>&nbsp;</td>
+        <td></td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Total:</td>
+        <td class="text-right">{{ totalCount }} notes</td>
+      </tr>
+      <tr>
+        <td>Width:</td>
+        <td class="text-right">{{ totalWidth }} cm</td>
+      </tr>
+      <tr>
+        <td>Height:</td>
+        <td class="text-right">{{ totalHeight }} cm</td>
+      </tr>
+      <tr>
+        <td>Time:</td>
+        <td class="text-right">{{ lowerTime }} - {{ upperTime }} min</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
