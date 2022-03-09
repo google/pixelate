@@ -33,6 +33,18 @@
     <div class="divider" *ngIf="canvas.hasImage"></div>
   </div>
 
+  <div class="button-group zoom" *ngIf="canvas.hasImage">
+    <button mat-button (click)="canvas.zoomIn()">
+      <mat-icon>zoom_in</mat-icon>
+    </button>
+    <button mat-button (click)="canvas.zoomToFit()">
+      <mat-icon>fit_screen</mat-icon>
+    </button>
+    <button mat-button (click)="canvas.zoomOut()">
+      <mat-icon>zoom_out</mat-icon>
+    </button>
+  </div>
+
   <mat-button-toggle-group
     [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
     name="tool"
@@ -91,17 +103,19 @@
   </div>
 </mat-toolbar>
 
-<app-canvas-editor
-  #canvas
-  [hidden]="mode !== Mode.DRAW || !(canvas.colorCounts | async)"
-></app-canvas-editor>
+<div class="scroll-container">
+  <app-canvas-editor
+    #canvas
+    [hidden]="mode !== Mode.DRAW || !(canvas.colorCounts | async)"
+  ></app-canvas-editor>
 
-<h2 *ngIf="!(canvas.colorCounts | async)">
-  Open, paste, or drop a small pixel art image.
-</h2>
+  <h2 *ngIf="!(canvas.colorCounts | async)">
+    Open, paste, or drop a small pixel art image.
+  </h2>
 
-<app-instructions
-  [hidden]="mode !== Mode.ASSEMBLE"
-  *ngIf="canvas.pixels | async as pixels"
-  [pixels]="pixels"
-></app-instructions>
+  <app-instructions
+    [hidden]="mode !== Mode.ASSEMBLE"
+    *ngIf="canvas.pixels | async as pixels"
+    [pixels]="pixels"
+  ></app-instructions>
+</div>

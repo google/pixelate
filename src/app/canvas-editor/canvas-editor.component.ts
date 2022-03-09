@@ -26,7 +26,7 @@ import {
 } from '@angular/core';
 import { EditableContext2D, HexColor } from './context';
 
-const SCALE = 25;
+const MAX_SCALE = 25;
 
 export enum Tool {
   DRAW,
@@ -43,7 +43,7 @@ export enum Tool {
 export class CanvasEditorComponent implements OnInit, AfterViewInit {
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
-  private ctx: EditableContext2D | null = null;
+  private ctx!: EditableContext2D;
 
   @Input() activeTool: Tool = Tool.DRAW;
 
@@ -61,26 +61,58 @@ export class CanvasEditorComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     const ctx = this.canvas.nativeElement.getContext('2d');
-    ctx!.imageSmoothingEnabled = false;
 
-    this.ctx = new EditableContext2D(ctx!);
+    if (!ctx) {
+      throw new Error('CanvasRenderingContext2D is null');
+    }
+
+    ctx.imageSmoothingEnabled = false;
+
+    this.ctx = new EditableContext2D(ctx);
   }
 
   async loadImageFile(imageFile: File) {
+    if (!this.ctx) {
+      return;
+    }
+
     const img = await loadImageFile(imageFile);
-
-    this.canvas.nativeElement.width = img.naturalWidth;
-    this.canvas.nativeElement.height = img.naturalHeight;
-    this.canvas.nativeElement.style.width = `${img.naturalWidth * SCALE}px`;
-    this.canvas.nativeElement.style.height = `${img.naturalHeight * SCALE}px`;
-
-    this.ctx!.ctx.fillStyle = '#ffffff';
-    this.ctx!.ctx.fillRect(0, 0, img.naturalWidth, img.naturalHeight);
-    this.ctx!.ctx.drawImage(img, 0, 0);
-    this.activeColor = this.ctx!.pick(0, 0);
-    this.colorCounts.next(this.ctx!.count());
-    this.pixels.next(this.ctx!.pixels());
+    this.ctx.resetToImage(img);
+    this.zoomToFit();
+    this.activeColor = this.ctx.pick(0, 0);
+    this.colorCounts.next(this.ctx.count());
+    this.pixels.next(this.ctx.pixels());
     this.hasImage = true;
+  }
+
+  set zoom(zoom: number) {
+    this.canvas.nativeElement.style.width = `${this.ctx.width * zoom}px`;
+    this.canvas.nativeElement.style.height = `${this.ctx.height * zoom}px`;
+  }
+
+  get zoom() {
+    return this.canvas.nativeElement.offsetWidth / this.ctx.width;
+  }
+
+  zoomToFit() {
+    this.zoom = Math.trunc(
+      Math.max(
+        1,
+        Math.min(
+          window.innerWidth / this.ctx.width,
+          window.innerHeight / this.ctx.height,
+          MAX_SCALE
+        )
+      )
+    );
+  }
+
+  zoomIn() {
+    this.zoom = Math.min(MAX_SCALE, this.zoom + 1);
+  }
+
+  zoomOut() {
+    this.zoom = Math.max(1, this.zoom - 1);
   }
 
   onMouseDown(event: MouseEvent) {
@@ -88,8 +120,8 @@ export class CanvasEditorComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const x = Math.trunc(event.offsetX / SCALE);
-    const y = Math.trunc(event.offsetY / SCALE);
+    const x = Math.trunc(event.offsetX / this.zoom);
+    const y = Math.trunc(event.offsetY / this.zoom);
 
     if (this.activeTool === Tool.DRAW) {
       this.ctx?.draw(x, y, this.activeColor);

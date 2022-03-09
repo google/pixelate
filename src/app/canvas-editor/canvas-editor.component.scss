@@ -17,4 +17,6 @@
 canvas {
   image-rendering: pixelated;
   cursor: crosshair;
+
+  transition: width 200ms ease, height 200ms ease;
 }

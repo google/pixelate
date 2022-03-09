@@ -20,6 +20,23 @@ export type HexColor = `#${string}`;
 export class EditableContext2D {
   constructor(readonly ctx: CanvasRenderingContext2D) {}
 
+  get width() {
+    return this.ctx.canvas.width;
+  }
+
+  get height() {
+    return this.ctx.canvas.height;
+  }
+
+  resetToImage(img: HTMLImageElement) {
+    const { naturalHeight, naturalWidth } = img;
+    this.ctx.canvas.width = naturalWidth;
+    this.ctx.canvas.height = naturalHeight;
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(0, 0, naturalWidth, naturalHeight);
+    this.ctx.drawImage(img, 0, 0);
+  }
+
   count() {
     const imageData = new EditableImageData(
       this.ctx.getImageData(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
