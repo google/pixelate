@@ -1,0 +1,9 @@
+runtime: nodejs16
+handlers:
+  - url: /(.*\.(gif|png|jpg|css|js)(|\.map))$
+    static_files: dist/pixelate/\1
+    upload: dist/pixelate/(.*)(|\.map)
+
+  - url: /(.*)
+    static_files: dist/pixelate/index.html
+    upload: dist/pixelate/index.html

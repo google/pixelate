@@ -1,0 +1,7 @@
+.angular/
+.git/
+.github/
+.husky/
+.vscode/
+dist/
+node_modules/
