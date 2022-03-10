@@ -68,4 +68,6 @@
 <app-instructions
   *ngIf="mode === Mode.ASSEMBLE && (canvas.pixels | async) as pixels"
   [pixels]="pixels"
+  [background]="isBackgroundColor"
+  (toggleBackgroundColor)="toggleBackgroundColor($event)"
 ></app-instructions>

@@ -26,6 +26,10 @@
   overflow: auto;
 }
 
+mat-toolbar.vertical {
+  min-width: 130px;
+}
+
 .scroll-container-vertical {
   flex: 1;
   overflow-y: auto;
@@ -75,11 +79,20 @@
   opacity: 0.5;
 }
 
-.toggle {
+.toggle,
+.toggle-strikethrough {
   cursor: pointer;
 
   &:hover {
     text-decoration: line-through;
     opacity: 0.5;
+  }
+}
+
+.strikethrough {
+  text-decoration: line-through;
+
+  &:hover {
+    text-decoration: none;
   }
 }

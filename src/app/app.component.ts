@@ -16,6 +16,7 @@
 
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { CanvasEditorComponent } from './canvas-editor/canvas-editor.component';
+import { HexColor } from './canvas-editor/context';
 import {
   ClipboardService,
   decodeBase64,
@@ -41,6 +42,8 @@ export class AppComponent implements AfterViewInit {
   mode = Mode.DRAW;
 
   @ViewChild(CanvasEditorComponent) canvas!: CanvasEditorComponent;
+
+  isBackgroundColor: { [key in HexColor]: boolean } = {};
 
   constructor(
     private readonly dragDropService: DragDropService,
@@ -106,5 +109,9 @@ export class AppComponent implements AfterViewInit {
       window.print();
       this.mode = original;
     }, 1);
+  }
+
+  toggleBackgroundColor(color: HexColor) {
+    this.isBackgroundColor[color] = !this.isBackgroundColor[color];
   }
 }
