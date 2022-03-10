@@ -1,0 +1,13 @@
+runtime: nodejs16
+handlers:
+  - url: /
+    static_files: dist/pixelate/index.html
+    upload: dist/pixelate/index.html
+
+  - url: /
+    static_dir: dist/pixelate
+
+  - url: /.*
+    secure: always
+    redirect_http_response_code: 301
+    script: auto
