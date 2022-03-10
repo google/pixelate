@@ -39,6 +39,7 @@ export class DragDropService {
   }
 }
 
+@Injectable()
 export class ClipboardService {
   registerPasteHandler(callback: (file: File) => void) {
     window.addEventListener('paste', (event) => {
@@ -53,6 +54,19 @@ export class ClipboardService {
       event.preventDefault();
       callback(file);
     });
+  }
+}
+
+const STORAGE_KEY = 'image';
+
+@Injectable()
+export class StorageService {
+  read(): string | undefined {
+    return window.localStorage.getItem(STORAGE_KEY) ?? undefined;
+  }
+
+  write(imageData: string) {
+    window.localStorage.setItem(STORAGE_KEY, imageData);
   }
 }
 
@@ -80,4 +94,9 @@ export function showFileDialog(callback: (file: File) => void) {
     }
   });
   input.click();
+}
+
+export async function decodeBase64(base64Data: string): Promise<File> {
+  const blob = await fetch(base64Data).then((res) => res.blob());
+  return new File([blob], 'file.png', { type: 'image/png' });
 }
