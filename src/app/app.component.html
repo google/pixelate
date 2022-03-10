@@ -1,4 +1,4 @@
-<mat-toolbar class="tools">
+<mat-toolbar class="main">
   <div class="spacer">
     <button mat-button (click)="uploadFile()">
       <mat-icon>upload_file</mat-icon>
@@ -33,89 +33,117 @@
     <div class="divider" *ngIf="canvas.hasImage"></div>
   </div>
 
-  <div class="button-group zoom" *ngIf="canvas.hasImage">
-    <button mat-button (click)="canvas.zoomIn()">
-      <mat-icon>zoom_in</mat-icon>
-    </button>
-    <button mat-button (click)="canvas.zoomToFit()">
-      <mat-icon>fit_screen</mat-icon>
-    </button>
-    <button mat-button (click)="canvas.zoomOut()">
-      <mat-icon>zoom_out</mat-icon>
-    </button>
-  </div>
-
-  <mat-button-toggle-group
-    [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
-    name="tool"
-    aria-label="Tool"
-    [(ngModel)]="canvas.activeTool"
-  >
-    <mat-button-toggle
-      [value]="Tool.DRAW"
-      matTooltip="Draw single pixels"
-      [style]="{ borderBottomColor: canvas.activeColor }"
+  <nav mat-tab-nav-bar *ngIf="canvas.hasImage">
+    <a mat-tab-link (click)="mode = Mode.DRAW" [active]="mode === Mode.DRAW">
+      <mat-icon>edit</mat-icon> Draw
+    </a>
+    <a
+      mat-tab-link
+      (click)="mode = Mode.ASSEMBLE"
+      [active]="mode === Mode.ASSEMBLE"
     >
-      <mat-icon>edit</mat-icon>
-    </mat-button-toggle>
-    <mat-button-toggle
-      [value]="Tool.FILL"
-      matTooltip="Fill area"
-      [style]="{ borderBottomColor: canvas.activeColor }"
-    >
-      <mat-icon>format_color_fill</mat-icon>
-    </mat-button-toggle>
-  </mat-button-toggle-group>
-
-  <button
-    [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
-    mat-button
-    class="color-picker"
-  >
-    <mat-icon class="label">colorize</mat-icon>
-    <input type="color" [(ngModel)]="canvas.activeColor" />
-  </button>
-
-  <div class="divider" [hidden]="mode !== Mode.DRAW || !canvas.hasImage"></div>
-
-  <div class="colors" [hidden]="mode !== Mode.DRAW || !canvas.hasImage">
-    <button
-      mat-button
-      *ngFor="let entry of canvas.colorCounts | async | keyvalue"
-      [style.backgroundColor]="entry.key"
-      (click)="canvas.activeColor = entry.key"
-    ></button>
-  </div>
+      <mat-icon>grid_on</mat-icon> Assemble
+    </a>
+  </nav>
 
   <div class="spacer-right">
-    <nav mat-tab-nav-bar *ngIf="canvas.hasImage">
-      <a mat-tab-link (click)="mode = Mode.DRAW" [active]="mode === Mode.DRAW">
-        <mat-icon>edit</mat-icon> Draw
-      </a>
-      <a
-        mat-tab-link
-        (click)="mode = Mode.ASSEMBLE"
-        [active]="mode === Mode.ASSEMBLE"
-      >
-        <mat-icon>grid_on</mat-icon> Assemble
-      </a>
-    </nav>
   </div>
 </mat-toolbar>
 
-<div class="scroll-container">
-  <app-canvas-editor
-    #canvas
-    [hidden]="mode !== Mode.DRAW || !(canvas.colorCounts | async)"
-  ></app-canvas-editor>
+<div class="row">
+  <mat-toolbar
+    class="vertical"
+    [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
+  >
+    <mat-button-toggle-group
+      name="tool"
+      aria-label="Tool"
+      [(ngModel)]="canvas.activeTool"
+      [vertical]="true"
+    >
+      <mat-button-toggle
+        [value]="Tool.DRAW"
+        matTooltip="Draw single pixels"
+        matTooltipPosition="right"
+        [style]="{ borderLeftColor: canvas.activeColor }"
+      >
+        <mat-icon>edit</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle
+        [value]="Tool.FILL"
+        matTooltip="Fill area"
+        matTooltipPosition="right"
+        [style]="{ borderLeftColor: canvas.activeColor }"
+      >
+        <mat-icon>format_color_fill</mat-icon>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
 
-  <h2 *ngIf="!(canvas.colorCounts | async)">
-    Open, paste, or drop a small pixel art image.
-  </h2>
+    <button
+      mat-button
+      class="color-picker"
+      matTooltip="Pick color"
+      matTooltipPosition="right"
+    >
+      <mat-icon class="label">colorize</mat-icon>
+      <input type="color" [(ngModel)]="canvas.activeColor" />
+    </button>
 
-  <app-instructions
-    [hidden]="mode !== Mode.ASSEMBLE"
-    *ngIf="canvas.pixels | async as pixels"
-    [pixels]="pixels"
-  ></app-instructions>
+    <div class="divider"></div>
+
+    <div class="colors">
+      <button
+        mat-button
+        *ngFor="let entry of canvas.colorCounts | async | keyvalue"
+        [style.backgroundColor]="entry.key"
+        (click)="canvas.activeColor = entry.key"
+      ></button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="button-group zoom">
+      <button
+        mat-button
+        (click)="canvas.zoomIn()"
+        matTooltip="Zoom in"
+        matTooltipPosition="right"
+      >
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+      <button
+        mat-button
+        (click)="canvas.zoomToFit()"
+        matTooltip="Zoom to fit screen"
+        matTooltipPosition="right"
+      >
+        <mat-icon>fit_screen</mat-icon>
+      </button>
+      <button
+        mat-button
+        (click)="canvas.zoomOut()"
+        matTooltip="Zoom out"
+        matTooltipPosition="right"
+      >
+        <mat-icon>zoom_out</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <div class="scroll-container">
+    <app-canvas-editor
+      #canvas
+      [hidden]="mode !== Mode.DRAW || !(canvas.colorCounts | async)"
+    ></app-canvas-editor>
+
+    <h2 *ngIf="!(canvas.colorCounts | async)">
+      Open, paste, or drop a small pixel art image.
+    </h2>
+
+    <app-instructions
+      [hidden]="mode !== Mode.ASSEMBLE"
+      *ngIf="canvas.pixels | async as pixels"
+      [pixels]="pixels"
+    ></app-instructions>
+  </div>
 </div>

@@ -22,6 +22,12 @@
   overscroll-behavior: contain;
 }
 
+.row {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+}
+
 .scroll-container {
   flex: 1;
   display: flex;
@@ -34,18 +40,28 @@
   }
 }
 
-.tools {
-  background-color: white;
-  display: flex;
-  flex-direction: row;
-  column-gap: 10px;
-  border-bottom: solid 1px #e0e0e0;
-  width: 100%;
-  height: 50px;
-  align-items: stretch;
-
+mat-toolbar {
   @media print {
-    display: none;
+    display: none !important;
+  }
+
+  &.vertical {
+    flex-direction: column;
+    width: auto;
+    height: 100%;
+    padding: 16px 0;
+  }
+
+  &.main {
+    background-color: white;
+    display: flex;
+    flex-direction: row;
+    column-gap: 10px;
+    border-bottom: solid 1px #e0e0e0;
+    width: 100%;
+    height: 50px;
+    align-items: stretch;
+
   }
 
   .divider {
@@ -55,6 +71,7 @@
 
   .button-group {
     display: flex;
+    flex-direction: column;
   }
 
   .spacer {
@@ -71,17 +88,20 @@
 
 .colors {
   display: flex;
-  column-gap: 1px;
-  padding: 4px 0;
+  flex-direction: column;
+  row-gap: 1px;
+  padding: 0 4px;
 
   .mat-button {
     padding: 0;
-    min-width: 30px;
+    min-width: 48px;
+    min-height: 30px;
   }
 }
 
 .color-picker {
   padding: 0;
+  height: 48px;
   min-width: 48px;
 
   .label {
@@ -90,23 +110,23 @@
     top: 13px;
     left: 13px;
   }
-}
 
-input[type="color"] {
-  background: none;
-  padding: 0;
-  border-radius: 4px;
-  height: 42px;
-  width: 100%;
-  border: none;
-  overflow: hidden;
-  cursor: pointer;
-
-  &::-webkit-color-swatch-wrapper {
+  input[type="color"] {
+    background: none;
     padding: 0;
-  }
+    border-radius: 4px;
+    height: 42px;
+    width: 100%;
+    border: none;
+    overflow: hidden;
+    cursor: pointer;
 
-  &::-webkit-color-swatch {
-    border: 0;
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    &::-webkit-color-swatch {
+      border: 0;
+    }
   }
 }

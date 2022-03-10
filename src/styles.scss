@@ -45,24 +45,26 @@ body {
   display: none !important;
 }
 
-.tools {
-  .mat-button-toggle,
-  .mat-button-toggle-group-appearance-standard,
-  .mat-button-toggle-group-appearance-standard
-    .mat-button-toggle
-    + .mat-button-toggle {
-    border: none;
+mat-toolbar {
+  &.vertical {
+    .mat-button-toggle,
+    .mat-button-toggle-group-appearance-standard,
+    .mat-button-toggle-group-appearance-standard
+      .mat-button-toggle
+      + .mat-button-toggle {
+      border: none;
 
-    &.mat-button-toggle-checked {
-      border-bottom: 4px solid;
+      &.mat-button-toggle-checked {
+        border-left: 4px solid;
+      }
     }
   }
 
-  [mat-tab-nav-bar] mat-icon {
-    margin-right: 8px;
-  }
-}
+  [mat-tab-nav-bar] {
+    user-select: none;
 
-[mat-tab-nav-bar] {
-  user-select: none;
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
 }
