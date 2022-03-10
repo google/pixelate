@@ -24,7 +24,7 @@ import { HexColor } from '../canvas-editor/context';
   styleUrls: ['./instructions.component.scss'],
 })
 export class InstructionsComponent implements OnChanges {
-  @Input() pixels: HexColor[][] = [];
+  @Input() pixels: ReadonlyArray<ReadonlyArray<HexColor>> = [];
 
   indices = new Map<HexColor, string>();
 

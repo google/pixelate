@@ -23,15 +23,9 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { EditableContext2D, HexColor } from './context';
+import { EditableContext2D, HexColor, Tool } from './context';
 
 const MAX_SCALE = 25;
-
-export enum Tool {
-  DRAW,
-  FILL,
-  PICK,
-}
 
 /** Canvas with image editing functions. */
 @Component({
@@ -50,9 +44,13 @@ export class CanvasEditorComponent implements AfterViewInit {
 
   @Input() activeColor: HexColor = '#000000';
 
-  @Output() readonly colorCounts = new EventEmitter<Map<HexColor, number>>();
+  @Output() readonly colorCounts = new EventEmitter<
+    ReadonlyMap<HexColor, number>
+  >();
 
-  @Output() readonly pixels = new EventEmitter<HexColor[][]>();
+  @Output() readonly pixels = new EventEmitter<
+    ReadonlyArray<ReadonlyArray<HexColor>>
+  >();
 
   hasImage = false;
 
@@ -112,27 +110,50 @@ export class CanvasEditorComponent implements AfterViewInit {
     this.zoom = Math.max(1, this.zoom - 1);
   }
 
+  readonly bufferedCoords: [Tool, HexColor, number, number][] = [];
+  animationFrameId = 0;
+
   onMouseDown(event: MouseEvent) {
     if (!(event.buttons & 1)) {
       return;
     }
 
-    const x = Math.trunc(event.offsetX / this.zoom);
-    const y = Math.trunc(event.offsetY / this.zoom);
+    event.preventDefault();
 
-    if (this.activeTool === Tool.DRAW) {
-      this.ctx?.draw(x, y, this.activeColor);
-    } else if (this.activeTool === Tool.FILL) {
-      this.ctx?.fill(x, y, this.activeColor);
-    } else if (this.activeTool === Tool.PICK) {
-      this.activeColor = this.ctx.pick(x, y);
-    } else {
+    // Math.min() prevents edge case of editing pixel that is slightly outside of canvas.
+    const x = Math.min(
+      this.ctx.width - 1,
+      Math.trunc(event.offsetX / this.zoom)
+    );
+    const y = Math.min(
+      this.ctx.height - 1,
+      Math.trunc(event.offsetY / this.zoom)
+    );
+    const previous = this.bufferedCoords[this.bufferedCoords.length - 1];
+
+    if (
+      previous &&
+      previous[0] === this.activeTool &&
+      previous[1] === this.activeColor &&
+      previous[2] === x &&
+      previous[3] === y
+    ) {
       return;
     }
 
-    this.colorCounts.next(this.ctx.count());
-    this.pixels.next(this.ctx.pixels());
-    event.preventDefault();
+    this.bufferedCoords.push([this.activeTool, this.activeColor, x, y]);
+
+    if (this.bufferedCoords.length > 1) {
+      return;
+    }
+
+    this.animationFrameId = requestAnimationFrame(() => {
+      this.ctx.applyMany(this.bufferedCoords);
+      this.animationFrameId = 0;
+      this.bufferedCoords.length = 0;
+      this.colorCounts.next(this.ctx.count());
+      this.pixels.next(this.ctx.pixels());
+    });
   }
 
   onMouseMove(event: MouseEvent) {

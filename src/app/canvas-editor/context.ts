@@ -16,9 +16,45 @@
 
 export type HexColor = `#${string}`;
 
+interface DirtyArea {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+function mergeDirtyAreas(
+  a: DirtyArea | null,
+  b: DirtyArea | null
+): DirtyArea | null {
+  if (!a) {
+    return b;
+  } else if (!b) {
+    return a;
+  } else {
+    return {
+      left: Math.min(a.left, b.left),
+      right: Math.max(a.right, b.right),
+      top: Math.min(a.top, b.top),
+      bottom: Math.max(a.bottom, b.bottom),
+    };
+  }
+}
+
+export enum Tool {
+  DRAW,
+  FILL,
+}
+
 /** Wrapper for CanvasRenderingContext2D with convenience editing functions.  */
 export class EditableContext2D {
-  constructor(readonly ctx: CanvasRenderingContext2D) {}
+  constructor(readonly ctx: CanvasRenderingContext2D) {
+    this.imageData = new EditableImageData(
+      ctx.getImageData(0, 0, this.width, this.height)
+    );
+  }
+
+  private imageData: EditableImageData;
 
   get width() {
     return this.ctx.canvas.width;
@@ -35,50 +71,60 @@ export class EditableContext2D {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.fillRect(0, 0, naturalWidth, naturalHeight);
     this.ctx.drawImage(img, 0, 0);
+    this.imageData = new EditableImageData(
+      this.ctx.getImageData(0, 0, naturalWidth, naturalHeight)
+    );
   }
 
   count() {
-    const imageData = new EditableImageData(
-      this.ctx.getImageData(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
-    );
-    return imageData.count();
+    return this.imageData.count();
   }
 
   pixels() {
-    const imageData = new EditableImageData(
-      this.ctx.getImageData(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
+    return this.imageData.pixels();
+  }
+
+  applyMany(operations: [Tool, HexColor, number, number][]) {
+    const dirty = operations.reduce(
+      (dirtyArea, [tool, color, x, y]) =>
+        mergeDirtyAreas(
+          dirtyArea,
+          this.apply(this.imageData, tool, color, x, y)
+        ),
+      null as DirtyArea | null
     );
-    return imageData.pixels();
+
+    if (dirty) {
+      this.ctx.putImageData(
+        this.imageData.imageData,
+        0,
+        0,
+        dirty.left,
+        dirty.top,
+        dirty.right - dirty.left + 1,
+        dirty.bottom - dirty.top + 1
+      );
+    }
   }
 
-  edit(cb: (imageData: EditableImageData) => void) {
-    const imageData = this.ctx.getImageData(
-      0,
-      0,
-      this.ctx.canvas.width,
-      this.ctx.canvas.height
-    );
-    cb(new EditableImageData(imageData));
-    this.ctx.putImageData(imageData, 0, 0);
-  }
-
-  fill(x: number, y: number, fillColor: HexColor) {
-    this.edit((imageData) => {
-      imageData.fill(x, y, fillColor);
-    });
-  }
-
-  draw(x: number, y: number, fillColor: HexColor) {
-    this.edit((imageData) => {
-      imageData.draw(x, y, fillColor);
-    });
+  private apply(
+    imageData: EditableImageData,
+    tool: Tool,
+    color: HexColor,
+    x: number,
+    y: number
+  ): DirtyArea | null {
+    if (tool === Tool.DRAW) {
+      return imageData.draw(x, y, color);
+    } else if (tool === Tool.FILL) {
+      return imageData.fill(x, y, color);
+    } else {
+      throw new Error(`Unknown tool ${tool}`);
+    }
   }
 
   pick(x: number, y: number): HexColor {
-    const imageData = new EditableImageData(
-      this.ctx.getImageData(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
-    );
-    return imageData.pick(x, y);
+    return this.imageData.pick(x, y);
   }
 }
 
@@ -90,7 +136,6 @@ function rgbToHex(r: number, g: number, b: number): HexColor {
   if (r > 255 || g > 255 || b > 255) {
     throw new Error(`Invalid color component ${r}, ${g}, ${b}`);
   }
-
   return `#${toHex(r) + toHex(g) + toHex(b)}`;
 }
 
@@ -110,7 +155,24 @@ function hexToRgb(hex: HexColor): [number, number, number] {
 
 /** Wrapper for ImageData with convenience editing functions. */
 class EditableImageData {
-  constructor(private readonly imageData: ImageData) {}
+  #pixels: HexColor[][];
+  #counter: Map<HexColor, number>;
+
+  constructor(readonly imageData: ImageData) {
+    this.#pixels = [];
+    this.#counter = new Map();
+
+    for (let y = 0; y < this.imageData.height; y++) {
+      const row: HexColor[] = [];
+      for (let x = 0; x < this.imageData.width; x++) {
+        const color = this.pick(x, y);
+        row.push(color);
+        const count = this.#counter.get(color) ?? 0;
+        this.#counter.set(color, count + 1);
+      }
+      this.#pixels.push(row);
+    }
+  }
 
   private toIndex(x: number, y: number) {
     return (y * this.imageData.width + x) * 4;
@@ -125,18 +187,40 @@ class EditableImageData {
     );
   }
 
-  draw(x: number, y: number, fillColor: HexColor) {
+  draw(x: number, y: number, fillColor: HexColor): DirtyArea | null {
+    const previous = this.#pixels[y][x];
+
+    if (previous === fillColor) {
+      return null;
+    }
+
     const rgb = hexToRgb(fillColor);
     const i = this.toIndex(x, y);
+
     this.imageData.data[i + 0] = rgb[0];
     this.imageData.data[i + 1] = rgb[1];
     this.imageData.data[i + 2] = rgb[2];
+    this.#pixels[y][x] = fillColor;
+
+    const previousCount = (this.#counter.get(previous) ?? 0) - 1;
+    if (previousCount <= 0) {
+      this.#counter.delete(previous);
+    } else {
+      this.#counter.set(previous, previousCount);
+    }
+
+    return { left: x, top: y, right: x, bottom: y };
   }
 
-  fill(x: number, y: number, fillColor: HexColor) {
+  fill(x: number, y: number, fillColor: HexColor): DirtyArea | null {
     let cur: [number, number] | undefined;
     const queue: [number, number][] = [[x, y]];
     const startColor = this.pick(x, y);
+    const dirtyArea: DirtyArea = { left: x, top: y, right: x, bottom: y };
+
+    if (this.pick(x, y) === fillColor) {
+      return null;
+    }
 
     while ((cur = queue.pop())) {
       const [cx, cy] = cur;
@@ -147,6 +231,10 @@ class EditableImageData {
       }
 
       this.draw(cx, cy, fillColor);
+      dirtyArea.left = Math.min(dirtyArea.left, cx);
+      dirtyArea.right = Math.max(dirtyArea.right, cx);
+      dirtyArea.top = Math.min(dirtyArea.top, cy);
+      dirtyArea.bottom = Math.max(dirtyArea.bottom, cy);
 
       if (cx > 0) {
         queue.push([cx - 1, cy]);
@@ -161,29 +249,15 @@ class EditableImageData {
         queue.push([cx, cy + 1]);
       }
     }
+
+    return dirtyArea;
   }
 
-  pixels(): HexColor[][] {
-    const results: HexColor[][] = [];
-    for (let y = 0; y < this.imageData.height; y++) {
-      const row: HexColor[] = [];
-      for (let x = 0; x < this.imageData.width; x++) {
-        row.push(this.pick(x, y));
-      }
-      results.push(row);
-    }
-    return results;
+  pixels(): ReadonlyArray<ReadonlyArray<HexColor>> {
+    return this.#pixels;
   }
 
-  count(): Map<HexColor, number> {
-    const counter = new Map();
-    for (let x = 0; x < this.imageData.width; x++) {
-      for (let y = 0; y < this.imageData.height; y++) {
-        const color = this.pick(x, y);
-        const count = counter.get(color) ?? 0;
-        counter.set(color, count + 1);
-      }
-    }
-    return counter;
+  count(): ReadonlyMap<HexColor, number> {
+    return this.#counter;
   }
 }
