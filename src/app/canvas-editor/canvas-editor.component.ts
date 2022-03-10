@@ -18,11 +18,11 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
-  EventEmitter,
   Input,
   Output,
   ViewChild,
 } from '@angular/core';
+import { ReplaySubject } from 'rxjs';
 import { EditableContext2D, HexColor, Tool } from './context';
 
 const MAX_SCALE = 25;
@@ -44,13 +44,13 @@ export class CanvasEditorComponent implements AfterViewInit {
 
   @Input() activeColor: HexColor = '#000000';
 
-  @Output() readonly colorCounts = new EventEmitter<
+  @Output() readonly colorCounts = new ReplaySubject<
     ReadonlyMap<HexColor, number>
-  >();
+  >(1);
 
-  @Output() readonly pixels = new EventEmitter<
+  @Output() readonly pixels = new ReplaySubject<
     ReadonlyArray<ReadonlyArray<HexColor>>
-  >();
+  >(1);
 
   hasImage = false;
 
