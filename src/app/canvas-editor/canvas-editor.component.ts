@@ -20,7 +20,6 @@ import {
   ElementRef,
   EventEmitter,
   Input,
-  OnInit,
   Output,
   ViewChild,
 } from '@angular/core';
@@ -40,7 +39,7 @@ export enum Tool {
   templateUrl: './canvas-editor.component.html',
   styleUrls: ['./canvas-editor.component.scss'],
 })
-export class CanvasEditorComponent implements OnInit, AfterViewInit {
+export class CanvasEditorComponent implements AfterViewInit {
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
   private ctx!: EditableContext2D;
@@ -54,10 +53,6 @@ export class CanvasEditorComponent implements OnInit, AfterViewInit {
   @Output() readonly pixels = new EventEmitter<HexColor[][]>();
 
   hasImage = false;
-
-  constructor() {}
-
-  ngOnInit(): void {}
 
   ngAfterViewInit(): void {
     const ctx = this.canvas.nativeElement.getContext('2d');
@@ -128,13 +123,13 @@ export class CanvasEditorComponent implements OnInit, AfterViewInit {
     } else if (this.activeTool === Tool.FILL) {
       this.ctx?.fill(x, y, this.activeColor);
     } else if (this.activeTool === Tool.PICK) {
-      this.activeColor = this.ctx!.pick(x, y);
+      this.activeColor = this.ctx.pick(x, y);
     } else {
       return;
     }
 
-    this.colorCounts.next(this.ctx!.count());
-    this.pixels.next(this.ctx!.pixels());
+    this.colorCounts.next(this.ctx.count());
+    this.pixels.next(this.ctx.pixels());
     event.preventDefault();
   }
 

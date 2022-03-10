@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { HexColor } from '../canvas-editor/context';
 
 /** Instructions on how to assemble the pixel art mural. */
@@ -81,7 +81,7 @@ export class InstructionsComponent implements OnChanges {
     return Math.trunc(total / 2) === index;
   }
 
-  ngOnChanges(changes?: SimpleChanges): void {
+  ngOnChanges(): void {
     this.indices = new Map();
     const counts = new Map<HexColor, number>();
 
@@ -93,7 +93,7 @@ export class InstructionsComponent implements OnChanges {
           this.indices.set(color, index);
         }
 
-        let count = counts.get(color) ?? 0;
+        const count = counts.get(color) ?? 0;
         counts.set(color, count + 1);
       }
     }

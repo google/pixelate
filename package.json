@@ -15,11 +15,18 @@
     "test": "ng test --watch=false",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
     "test:watch": "ng test --watch=true",
+    "lint": "npm run lint:formatting && npm run lint:code",
     "lint:formatting": "npx prettier --check .",
+    "lint:code": "eslint --ext .ts --max-warnings=0 .",
     "prepare": "husky install"
   },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --max-warnings=0",
+      "prettier --write"
+    ]
+  },
   "dependencies": {
-    "@angular/animations": "~13.2.0",
     "@angular/cdk": "^13.2.5",
     "@angular/common": "~13.2.0",
     "@angular/compiler": "~13.2.0",
@@ -39,6 +46,10 @@
     "@angular/compiler-cli": "~13.2.0",
     "@types/jasmine": "~3.10.0",
     "@types/node": "^12.11.1",
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^8.5.0",
     "husky": "^7.0.0",
     "jasmine-core": "~4.0.0",
     "karma": "~6.3.0",
@@ -46,10 +57,9 @@
     "karma-coverage": "~2.1.0",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "~1.7.0",
+    "lint-staged": "^12.3.5",
     "prettier": "^2.5.1",
-    "pretty-quick": "^3.1.3",
     "puppeteer": "^13.5.1",
-    "tslint-config-prettier": "^1.18.0",
     "typescript": "~4.5.2"
   }
 }

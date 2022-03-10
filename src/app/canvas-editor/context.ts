@@ -96,8 +96,8 @@ function rgbToHex(r: number, g: number, b: number): HexColor {
 
 const HEX_REGEX = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
 
-function hexToRgb(hex: HexColor): [number, number, number] | null {
-  var result = HEX_REGEX.exec(hex);
+function hexToRgb(hex: HexColor): [number, number, number] {
+  const result = HEX_REGEX.exec(hex);
   if (!result) {
     throw new Error(`Invalid color ${hex}`);
   }
@@ -126,7 +126,7 @@ class EditableImageData {
   }
 
   draw(x: number, y: number, fillColor: HexColor) {
-    const rgb = hexToRgb(fillColor)!;
+    const rgb = hexToRgb(fillColor);
     const i = this.toIndex(x, y);
     this.imageData.data[i + 0] = rgb[0];
     this.imageData.data[i + 1] = rgb[1];
