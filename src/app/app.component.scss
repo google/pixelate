@@ -62,6 +62,9 @@ mat-toolbar {
     height: 50px;
     align-items: stretch;
 
+    a.mat-button {
+      line-height: 48px;
+    }
   }
 
   .divider {
