@@ -39,6 +39,7 @@ export class DragDropService {
   }
 }
 
+@Injectable()
 export class ClipboardService {
   registerPasteHandler(callback: (file: File) => void) {
     window.addEventListener('paste', (event) => {
@@ -58,6 +59,7 @@ export class ClipboardService {
 
 const STORAGE_KEY = 'image';
 
+@Injectable()
 export class StorageService {
   read(): string | undefined {
     return window.localStorage.getItem(STORAGE_KEY) ?? undefined;
