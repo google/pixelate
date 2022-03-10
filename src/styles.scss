@@ -37,7 +37,6 @@ body {
   height: 100%;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  overflow: hidden;
   overscroll-behavior: contain;
 }
 
@@ -46,7 +45,33 @@ body {
 }
 
 mat-toolbar {
+  &,
+  &.mat-toolbar {
+    font-size: 1rem;
+  }
+
+  @media print {
+    display: none !important;
+  }
+
+  .spacer {
+    flex: 1;
+    display: flex;
+  }
+
   &.vertical {
+    flex-direction: column;
+    width: auto;
+    height: 100%;
+    padding: 16px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+    }
+
     .mat-button-toggle,
     .mat-button-toggle-group-appearance-standard,
     .mat-button-toggle-group-appearance-standard
@@ -66,5 +91,18 @@ mat-toolbar {
     mat-icon {
       margin-right: 8px;
     }
+  }
+}
+
+dt {
+  display: inline;
+}
+dd {
+  display: inline;
+  margin: 0;
+
+  &::after {
+    content: "\a";
+    white-space: pre;
   }
 }

@@ -14,9 +14,27 @@
  limitations under the License.
  */
 
+:host {
+  display: flex;
+  flex-direction: row;
+  overflow: auto;
+}
+
+.scroll-container {
+  flex: 1;
+  display: flex;
+  overflow: auto;
+}
+
+.scroll-container-vertical {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .grid {
   td {
-    width: 20px;
+    min-width: 20px;
     height: 20px;
     vertical-align: middle;
     text-align: center;
@@ -29,12 +47,6 @@
 
 .middle-x {
   margin-right: 1em;
-}
-
-:host {
-  display: flex;
-  flex-direction: column;
-  row-gap: 20px;
 }
 
 .row {
