@@ -38,7 +38,7 @@ export class InstructionsComponent implements OnChanges {
   readonly completedCols = new Map<number, boolean>();
 
   get totalWidth() {
-    return this.pixels[0].length * 7.6;
+    return (this.pixels[0]?.length ?? 0) * 7.6;
   }
 
   get totalHeight() {
