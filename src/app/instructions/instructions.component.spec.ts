@@ -24,9 +24,8 @@ describe('InstructionsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ InstructionsComponent ]
-    })
-    .compileComponents();
+      declarations: [InstructionsComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {

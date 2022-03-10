@@ -62,7 +62,7 @@ export function createBase64DataURL(
   baseURL?: string
 ) {
   const params = new URLSearchParams({
-    [MODE_PARAM_KEY]: MODE_VALUES.get(mode)!,
+    [MODE_PARAM_KEY]: MODE_VALUES.get(mode) ?? '',
     [QUERY_PARAM_KEY]: data,
   });
   const url = new URL(baseURL ?? window.location.toString());

@@ -57,7 +57,7 @@ export class ClipboardService {
 }
 
 function getImageFromDataTransfer(dataTransfer: DataTransfer): File | null {
-  for (var i = 0; i < dataTransfer.items.length; i++) {
+  for (let i = 0; i < dataTransfer.items.length; i++) {
     const item = dataTransfer.items[i];
     if (item.type.startsWith('image')) {
       return item.getAsFile();
