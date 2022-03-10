@@ -40,6 +40,8 @@ export enum Tool {
   styleUrls: ['./canvas-editor.component.scss'],
 })
 export class CanvasEditorComponent implements AfterViewInit {
+  readonly Tool = Tool;
+
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
   private ctx!: EditableContext2D;

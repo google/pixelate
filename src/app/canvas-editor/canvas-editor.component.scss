@@ -14,9 +14,72 @@
  limitations under the License.
  */
 
+:host {
+  display: flex;
+  flex: 1;
+  overflow: auto;
+}
+
+.scroll-container {
+  flex: 1;
+  display: flex;
+  overflow: auto;
+
+  // Centering with justify-content breaks horizontal scrolling when zoomed in.
+  // Instead, children need to handle margins and centering.
+  & > * {
+    margin: 50px auto;
+  }
+}
+
 canvas {
   image-rendering: pixelated;
   cursor: crosshair;
 
   transition: width 200ms ease, height 200ms ease;
+}
+
+.colors {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1px;
+  padding: 0 4px;
+
+  .mat-button {
+    padding: 0;
+    min-width: 48px;
+    min-height: 30px;
+  }
+}
+
+.color-picker {
+  padding: 0;
+  height: 48px;
+  min-width: 48px;
+
+  .label {
+    position: absolute;
+    pointer-events: none;
+    top: 13px;
+    left: 13px;
+  }
+
+  input[type="color"] {
+    background: none;
+    padding: 0;
+    border-radius: 4px;
+    height: 42px;
+    width: 100%;
+    border: none;
+    overflow: hidden;
+    cursor: pointer;
+
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    &::-webkit-color-swatch {
+      border: 0;
+    }
+  }
 }

@@ -15,10 +15,7 @@
  */
 
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import {
-  CanvasEditorComponent,
-  Tool,
-} from './canvas-editor/canvas-editor.component';
+import { CanvasEditorComponent } from './canvas-editor/canvas-editor.component';
 import {
   ClipboardService,
   decodeBase64,
@@ -39,7 +36,6 @@ import {
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements AfterViewInit {
-  readonly Tool = Tool;
   readonly Mode = Mode;
 
   mode = Mode.DRAW;
