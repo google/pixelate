@@ -24,9 +24,8 @@ describe('CanvasEditorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CanvasEditorComponent ]
-    })
-    .compileComponents();
+      declarations: [CanvasEditorComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {
