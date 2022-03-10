@@ -26,14 +26,14 @@ const MODE_VALUES = new Map([
   [Mode.DRAW, 'd'],
 ]);
 
-export function getBase64FromURL(searchString?: string): string | undefined {
-  if (searchString === undefined) {
-    searchString = document.location.hash.slice(1);
-  }
-
-  const base64Data = new URLSearchParams(searchString).get(QUERY_PARAM_KEY);
+export function getAndClearBase64FromURL(): string | undefined {
+  const searchString = document.location.hash.slice(1);
+  const params = new URLSearchParams(searchString);
+  const base64Data = params.get(QUERY_PARAM_KEY);
 
   if (base64Data && base64Data.startsWith('data:image/png;base64,')) {
+    params.delete(QUERY_PARAM_KEY);
+    document.location.hash = `#${params}`;
     return base64Data;
   } else {
     return undefined;

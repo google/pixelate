@@ -56,6 +56,18 @@ export class ClipboardService {
   }
 }
 
+const STORAGE_KEY = 'image';
+
+export class StorageService {
+  read(): string | undefined {
+    return window.localStorage.getItem(STORAGE_KEY) ?? undefined;
+  }
+
+  write(imageData: string) {
+    window.localStorage.setItem(STORAGE_KEY, imageData);
+  }
+}
+
 function getImageFromDataTransfer(dataTransfer: DataTransfer): File | null {
   for (let i = 0; i < dataTransfer.items.length; i++) {
     const item = dataTransfer.items[i];
@@ -80,4 +92,9 @@ export function showFileDialog(callback: (file: File) => void) {
     }
   });
   input.click();
+}
+
+export async function decodeBase64(base64Data: string): Promise<File> {
+  const blob = await fetch(base64Data).then((res) => res.blob());
+  return new File([blob], 'file.png', { type: 'image/png' });
 }

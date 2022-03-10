@@ -19,10 +19,16 @@ import {
   CanvasEditorComponent,
   Tool,
 } from './canvas-editor/canvas-editor.component';
-import { ClipboardService, DragDropService, showFileDialog } from './io';
+import {
+  ClipboardService,
+  decodeBase64,
+  DragDropService,
+  showFileDialog,
+  StorageService,
+} from './io';
 import {
   createBase64DataURL,
-  getBase64FromURL,
+  getAndClearBase64FromURL,
   getModeFromURL,
   Mode,
 } from './routing';
@@ -42,7 +48,8 @@ export class AppComponent implements AfterViewInit {
 
   constructor(
     private readonly dragDropService: DragDropService,
-    private readonly clipboardService: ClipboardService
+    private readonly clipboardService: ClipboardService,
+    private readonly storageService: StorageService
   ) {}
 
   async ngAfterViewInit() {
@@ -55,13 +62,17 @@ export class AppComponent implements AfterViewInit {
 
     this.mode = getModeFromURL() ?? Mode.DRAW;
 
-    const base64Data = getBase64FromURL();
+    const base64Data = getAndClearBase64FromURL() ?? this.storageService.read();
     if (base64Data) {
-      const blob = await fetch(base64Data).then((res) => res.blob());
-      this.canvas.loadImageFile(
-        new File([blob], 'b.png', { type: 'image/png' })
-      );
+      const file = await decodeBase64(base64Data);
+      this.canvas.loadImageFile(file);
     }
+
+    window.addEventListener('beforeunload', () => {
+      if (this.canvas.hasImage) {
+        this.storageService.write(this.canvas.getDataURL());
+      }
+    });
   }
 
   uploadFile() {
