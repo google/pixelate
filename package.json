@@ -11,8 +11,10 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false"
+    "build:watch": "ng build --watch --configuration development",
+    "test": "ng test --watch=false",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
+    "test:watch": "ng test --watch=true"
   },
   "dependencies": {
     "@angular/animations": "~13.2.0",
@@ -41,6 +43,7 @@
     "karma-coverage": "~2.1.0",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "~1.7.0",
+    "puppeteer": "^13.5.1",
     "typescript": "~4.5.2"
   }
 }
