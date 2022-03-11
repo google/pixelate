@@ -21,6 +21,14 @@
     >
       <mat-icon>format_color_fill</mat-icon>
     </mat-button-toggle>
+    <mat-button-toggle
+      [value]="Tool.MAGIC_WAND"
+      matTooltip="Fill areas with the same color as the clicked pixel"
+      matTooltipPosition="right"
+      [style]="{ borderLeftColor: activeColor }"
+    >
+      <mat-icon>format_paint</mat-icon>
+    </mat-button-toggle>
   </mat-button-toggle-group>
 
   <button
