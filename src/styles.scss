@@ -106,3 +106,25 @@ dd {
     white-space: pre;
   }
 }
+
+.mat-menu-panel {
+  hr {
+    margin: 0;
+    border-color: #e0e0e0;
+    border-width: 1px 0 0;
+  }
+}
+
+html {
+  --mobile: 0;
+}
+
+@media (max-width: 480px), (max-height: 480px) {
+  html {
+    --mobile: 1;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+}

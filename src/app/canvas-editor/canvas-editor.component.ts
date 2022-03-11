@@ -67,6 +67,10 @@ export class CanvasEditorComponent implements AfterViewInit {
     this.ctx = new EditableContext2D(ctx);
   }
 
+  clear() {
+    this.hasImage = false;
+  }
+
   async loadImageFile(imageFile: File) {
     if (!this.ctx) {
       return;
@@ -95,8 +99,8 @@ export class CanvasEditorComponent implements AfterViewInit {
       Math.max(
         1,
         Math.min(
-          window.innerWidth / this.ctx.width,
-          window.innerHeight / this.ctx.height,
+          (window.innerWidth / this.ctx.width) * 0.9,
+          (window.innerHeight / this.ctx.height) * 0.9,
           MAX_SCALE
         )
       )

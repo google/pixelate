@@ -18,12 +18,16 @@
   display: flex;
   flex-direction: row;
   overflow: auto;
+  flex: 1;
+  align-items: flex-start;
 }
 
 .scroll-container {
   flex: 1;
   display: flex;
   overflow: auto;
+  height: 100%;
+  align-items: flex-start;
 }
 
 mat-toolbar.vertical {

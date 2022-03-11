@@ -1,39 +1,45 @@
 <mat-toolbar class="main">
   <div class="spacer">
-    <button mat-button (click)="uploadFile()">
-      <mat-icon>upload_file</mat-icon>
-      Open
-    </button>
-
-    <div class="divider"></div>
-
-    <button mat-button [matMenuTriggerFor]="saveMenu" *ngIf="canvas.hasImage">
-      Save
-      <mat-icon>arrow_drop_down</mat-icon>
+    <button mat-button [matMenuTriggerFor]="saveMenu" matTooltip="Save">
+      File
     </button>
     <mat-menu #saveMenu="matMenu">
-      <button mat-menu-item (click)="downloadPng()">
+      <button mat-menu-item (click)="newFile()">
+        <mat-icon>note_add</mat-icon>
+        New
+      </button>
+
+      <hr />
+
+      <button mat-menu-item (click)="uploadFile()">
+        <mat-icon>upload_file</mat-icon>
+        Open
+      </button>
+
+      <hr />
+
+      <button
+        mat-menu-item
+        (click)="downloadPng()"
+        [disabled]="!canvas.hasImage"
+      >
         <mat-icon>download</mat-icon>
         Download image
       </button>
-      <button mat-menu-item (click)="copyImage()">
+      <button mat-menu-item (click)="copyImage()" [disabled]="!canvas.hasImage">
         <mat-icon>content_copy</mat-icon>
         Copy image
       </button>
-      <button mat-menu-item (click)="copyUrl()">
+      <button mat-menu-item (click)="copyUrl()" [disabled]="!canvas.hasImage">
         <mat-icon>link</mat-icon>
         Copy link to image
-      </button>
-      <button mat-menu-item (click)="printAssembly()">
-        <mat-icon>print</mat-icon>
-        Print assembly guide
       </button>
     </mat-menu>
 
     <div class="divider" *ngIf="canvas.hasImage"></div>
   </div>
 
-  <nav mat-tab-nav-bar *ngIf="canvas.hasImage">
+  <nav mat-tab-nav-bar *ngIf="canvas.hasImage" class="hide-mobile">
     <a mat-tab-link (click)="mode = Mode.DRAW" [active]="mode === Mode.DRAW">
       <mat-icon>edit</mat-icon> Draw
     </a>
@@ -63,7 +69,9 @@
   [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
 ></app-canvas-editor>
 
-<h2 *ngIf="!canvas.hasImage">Open, paste, or drop a small pixel art image.</h2>
+<div class="empty-page" *ngIf="!canvas.hasImage">
+  <h2>Open, paste, or drop a small pixel art image.</h2>
+</div>
 
 <app-instructions
   *ngIf="mode === Mode.ASSEMBLE && (canvas.pixels | async) as pixels"

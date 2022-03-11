@@ -68,11 +68,24 @@ export class AppComponent implements AfterViewInit {
       this.urlStateSerializer.clear();
     }
 
+    if (this.isMobile) {
+      // Draw experience is tough on mobile phones. Show Assembly view as default for now.
+      this.mode = Mode.ASSEMBLE;
+    }
+
     window.addEventListener('beforeunload', () => {
       if (this.canvas.hasImage) {
         this.storageService.save(this.getPersistableState());
       }
     });
+  }
+
+  get isMobile() {
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--mobile')
+        .trim() === '1'
+    );
   }
 
   getPersistableState(): PersistableState {
@@ -96,6 +109,12 @@ export class AppComponent implements AfterViewInit {
     this.crossedOutColors = new Set(state.crossedOutColors);
     this.crossedOutRows = new Set(state.crossedOutRows);
     this.crossedOutColumns = new Set(state.crossedOutColumns);
+  }
+
+  newFile() {
+    this.canvas.clear();
+    this.storageService.clear();
+    this.setPersistableState(DEFAULT_STATE);
   }
 
   uploadFile() {
@@ -123,15 +142,6 @@ export class AppComponent implements AfterViewInit {
   async copyUrl() {
     const url = this.urlStateSerializer.makeURL(this.getPersistableState());
     return navigator.clipboard.writeText(url);
-  }
-
-  printAssembly() {
-    const original = this.mode;
-    this.mode = Mode.ASSEMBLE;
-    setTimeout(() => {
-      window.print();
-      this.mode = original;
-    }, 1);
   }
 
   toggleCrossedColor(color: HexColor) {
