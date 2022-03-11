@@ -31,6 +31,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { AppComponent } from './app.component';
 import { CanvasEditorComponent } from './canvas-editor/canvas-editor.component';
 import { ClipboardService, DragDropService, StorageService } from './io';
+import { UrlStateSerializer } from './routing';
 
 @NgModule({
   declarations: [AppComponent, CanvasEditorComponent, InstructionsComponent],
@@ -48,7 +49,12 @@ import { ClipboardService, DragDropService, StorageService } from './io';
     MatToolbarModule,
     MatTooltipModule,
   ],
-  providers: [DragDropService, ClipboardService, StorageService],
+  providers: [
+    DragDropService,
+    ClipboardService,
+    StorageService,
+    UrlStateSerializer,
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

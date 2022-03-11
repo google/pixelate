@@ -15,7 +15,7 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { HexColor } from '../canvas-editor/context';
+import { HexColor } from '../state';
 
 /** Instructions on how to assemble the pixel art mural. */
 @Component({

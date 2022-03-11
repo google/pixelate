@@ -15,6 +15,12 @@
  */
 
 import { Injectable } from '@angular/core';
+import {
+  deserializeState,
+  PersistableState,
+  serializeState,
+  StateSerializer,
+} from './state';
 
 @Injectable()
 export class DragDropService {
@@ -60,13 +66,18 @@ export class ClipboardService {
 const STORAGE_KEY = 'image';
 
 @Injectable()
-export class StorageService {
-  read(): string | undefined {
-    return window.localStorage.getItem(STORAGE_KEY) ?? undefined;
+export class StorageService implements StateSerializer {
+  async clear(): Promise<void> {
+    window.localStorage.clear();
   }
 
-  write(imageData: string) {
-    window.localStorage.setItem(STORAGE_KEY, imageData);
+  async read(): Promise<Partial<PersistableState> | null> {
+    const str = window.localStorage.getItem(STORAGE_KEY);
+    return str ? deserializeState(str) : null;
+  }
+
+  async save(state: PersistableState) {
+    window.localStorage.setItem(STORAGE_KEY, serializeState(state));
   }
 }
 
