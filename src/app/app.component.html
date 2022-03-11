@@ -68,6 +68,10 @@
 <app-instructions
   *ngIf="mode === Mode.ASSEMBLE && (canvas.pixels | async) as pixels"
   [pixels]="pixels"
-  [background]="isBackgroundColor"
-  (toggleBackgroundColor)="toggleBackgroundColor($event)"
+  [crossedOutColors]="crossedOutColors"
+  [crossedOutRows]="crossedOutRows"
+  [crossedOutColumns]="crossedOutColumns"
+  (toggleBackgroundColor)="toggleCrossedColor($event)"
+  (toggleColumn)="toggleCrossedColumn($event)"
+  (toggleRow)="toggleCrossedRow($event)"
 ></app-instructions>

@@ -22,17 +22,17 @@ export enum Mode {
 export interface PersistableState {
   image: string;
   mode: Mode;
-  crossedColors: HexColor[];
-  crossedRows: number[];
-  crossedColumns: number[];
+  crossedOutColors: HexColor[];
+  crossedOutRows: number[];
+  crossedOutColumns: number[];
   activeColor: HexColor;
 }
 
 export const DEFAULT_STATE: Readonly<PersistableState> = {
   activeColor: '#000000',
-  crossedColors: [],
-  crossedColumns: [],
-  crossedRows: [],
+  crossedOutColors: [],
+  crossedOutColumns: [],
+  crossedOutRows: [],
   image: '',
   mode: Mode.DRAW,
 };
@@ -98,12 +98,19 @@ export function isHexColor(hex: HexColor | string): hex is HexColor {
 
 const QUERY_KEYS: { [key in keyof PersistableState]: string } = {
   activeColor: 'c',
-  crossedColors: 'bg',
-  crossedColumns: 'cols',
-  crossedRows: 'rows',
+  crossedOutColors: 'bg',
+  crossedOutColumns: 'cols',
+  crossedOutRows: 'rows',
   image: 'b',
   mode: 'm',
 };
+
+function parseNumberArray(str: string): number[] {
+  return str
+    .split(',')
+    .map((s) => Number(s))
+    .filter((n) => !isNaN(n));
+}
 
 export function deserializeState(str: string): Partial<PersistableState> {
   const params = new URLSearchParams(str);
@@ -119,12 +126,26 @@ export function deserializeState(str: string): Partial<PersistableState> {
     state.activeColor = activeColor;
   }
 
-  const crossedColors = params
-    .get(QUERY_KEYS['crossedColors'])
+  const crossedOutColors = params
+    .get(QUERY_KEYS['crossedOutColors'])
     ?.split(',')
     .filter(isHexColor);
-  if (crossedColors?.length) {
-    state.crossedColors = crossedColors;
+  if (crossedOutColors?.length) {
+    state.crossedOutColors = crossedOutColors;
+  }
+
+  const crossedOutColumns = parseNumberArray(
+    params.get(QUERY_KEYS['crossedOutColumns']) ?? ''
+  );
+  if (crossedOutColumns.length) {
+    state.crossedOutColumns = crossedOutColumns;
+  }
+
+  const crossedOutRows = parseNumberArray(
+    params.get(QUERY_KEYS['crossedOutRows']) ?? ''
+  );
+  if (crossedOutRows.length) {
+    state.crossedOutRows = crossedOutRows;
   }
 
   const mode = params.get(QUERY_KEYS['mode']);
@@ -140,9 +161,9 @@ export function serializeState(state: PersistableState): string {
   return new URLSearchParams({
     [QUERY_KEYS['activeColor']]: state.activeColor,
     [QUERY_KEYS['image']]: state.image,
-    [QUERY_KEYS['crossedColors']]: state.crossedColors.join(','),
-    [QUERY_KEYS['crossedColumns']]: state.crossedColumns.join(','),
-    [QUERY_KEYS['crossedRows']]: state.crossedRows.join(','),
+    [QUERY_KEYS['crossedOutColors']]: state.crossedOutColors.join(','),
+    [QUERY_KEYS['crossedOutColumns']]: state.crossedOutColumns.join(','),
+    [QUERY_KEYS['crossedOutRows']]: state.crossedOutRows.join(','),
     [QUERY_KEYS['mode']]: state.mode,
   }).toString();
 }

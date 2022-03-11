@@ -38,7 +38,11 @@ export class AppComponent implements AfterViewInit {
 
   @ViewChild(CanvasEditorComponent) canvas!: CanvasEditorComponent;
 
-  isBackgroundColor: { [key in HexColor]: boolean } = {};
+  crossedOutColors = new Set<HexColor>();
+
+  crossedOutRows = new Set<number>();
+
+  crossedOutColumns = new Set<number>();
 
   constructor(
     private readonly dragDropService: DragDropService,
@@ -60,7 +64,6 @@ export class AppComponent implements AfterViewInit {
         (await this.urlStateSerializer.read()) ??
         (await this.storageService.read());
       await this.setPersistableState({ ...DEFAULT_STATE, ...loadedState });
-      console.log({ ...DEFAULT_STATE, ...loadedState });
     } finally {
       this.urlStateSerializer.clear();
     }
@@ -77,11 +80,9 @@ export class AppComponent implements AfterViewInit {
       image: this.canvas.getDataURL(),
       activeColor: this.canvas.activeColor,
       mode: this.mode,
-      crossedColors: Object.entries(this.isBackgroundColor)
-        .filter(([, bg]) => bg)
-        .map(([color]) => color as HexColor),
-      crossedColumns: [],
-      crossedRows: [],
+      crossedOutColors: Array.from(this.crossedOutColors),
+      crossedOutColumns: Array.from(this.crossedOutColumns),
+      crossedOutRows: Array.from(this.crossedOutRows),
     };
   }
 
@@ -91,10 +92,10 @@ export class AppComponent implements AfterViewInit {
       await this.canvas.loadImageFile(file);
     }
     this.mode = state.mode;
-    this.isBackgroundColor = Object.fromEntries(
-      state.crossedColors.map((c) => [c, true])
-    );
     this.canvas.activeColor = state.activeColor;
+    this.crossedOutColors = new Set(state.crossedOutColors);
+    this.crossedOutRows = new Set(state.crossedOutRows);
+    this.crossedOutColumns = new Set(state.crossedOutColumns);
   }
 
   uploadFile() {
@@ -133,7 +134,23 @@ export class AppComponent implements AfterViewInit {
     }, 1);
   }
 
-  toggleBackgroundColor(color: HexColor) {
-    this.isBackgroundColor[color] = !this.isBackgroundColor[color];
+  toggleCrossedColor(color: HexColor) {
+    toggle(color, this.crossedOutColors);
+  }
+
+  toggleCrossedRow(row: number) {
+    toggle(row, this.crossedOutRows);
+  }
+
+  toggleCrossedColumn(column: number) {
+    toggle(column, this.crossedOutColumns);
+  }
+}
+
+function toggle<T>(value: T, set: Set<T>) {
+  if (set.has(value)) {
+    set.delete(value);
+  } else {
+    set.add(value);
   }
 }

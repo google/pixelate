@@ -40,7 +40,6 @@ export class UrlStateSerializer implements StateSerializer {
 
   async read(): Promise<Partial<PersistableState> | null> {
     const params = document.location.hash.slice(1);
-    console.log('URL', params ? deserializeState(params) : null);
     return params ? deserializeState(params) : null;
   }
 }
