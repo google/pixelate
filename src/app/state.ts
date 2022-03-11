@@ -87,6 +87,10 @@ export function hexToRgb(hex: HexColor): [number, number, number] {
   ];
 }
 
+export function isLightColor(rgb: [number, number, number]) {
+  return Math.max(...rgb) > 220;
+}
+
 export function isHexColor(hex: HexColor | string): hex is HexColor {
   try {
     hexToRgb(hex as HexColor);

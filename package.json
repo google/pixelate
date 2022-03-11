@@ -21,9 +21,11 @@
     "prepare": "husky install"
   },
   "lint-staged": {
-    "*.ts": [
-      "eslint --max-warnings=0",
+    "*": [
       "prettier --write"
+    ],
+    "*.ts": [
+      "eslint --max-warnings=0"
     ]
   },
   "dependencies": {
