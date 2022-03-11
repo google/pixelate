@@ -1,34 +1,20 @@
 <mat-toolbar class="vertical">
-  <mat-button-toggle-group
-    name="tool"
-    aria-label="Tool"
-    [(ngModel)]="activeTool"
-    [vertical]="true"
-  >
-    <mat-button-toggle
-      [value]="Tool.DRAW"
-      matTooltip="Draw single pixels"
-      matTooltipPosition="right"
-      [style]="{ borderLeftColor: activeColor }"
-    >
+  <mat-button-toggle-group name="tool" aria-label="Tool" [(ngModel)]="activeTool" [vertical]="true">
+    <mat-button-toggle [value]="Tool.DRAW" matTooltip="Draw single pixels" matTooltipPosition="right"
+      [style]="{ borderLeftColor: activeColor }">
       <mat-icon>edit</mat-icon>
     </mat-button-toggle>
-    <mat-button-toggle
-      [value]="Tool.FILL"
-      matTooltip="Fill area"
-      matTooltipPosition="right"
-      [style]="{ borderLeftColor: activeColor }"
-    >
+    <mat-button-toggle [value]="Tool.FILL" matTooltip="Fill area" matTooltipPosition="right"
+      [style]="{ borderLeftColor: activeColor }">
       <mat-icon>format_color_fill</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle [value]="Tool.MAGIC_WAND" matTooltip="Fill areas with the same color as the clicked pixel"
+      matTooltipPosition="right" [style]="{ borderLeftColor: activeColor }">
+      <mat-icon>format_paint</mat-icon>
     </mat-button-toggle>
   </mat-button-toggle-group>
 
-  <button
-    mat-button
-    class="color-picker"
-    matTooltip="Pick color"
-    matTooltipPosition="right"
-  >
+  <button mat-button class="color-picker" matTooltip="Pick color" matTooltipPosition="right">
     <mat-icon class="label">colorize</mat-icon>
     <input type="color" [(ngModel)]="activeColor" />
   </button>
@@ -36,48 +22,25 @@
   <div class="divider"></div>
 
   <div class="colors">
-    <button
-      mat-button
-      *ngFor="let entry of colorCounts | async | keyvalue"
-      [style.backgroundColor]="entry.key"
-      (click)="activeColor = entry.key"
-    ></button>
+    <button mat-button *ngFor="let entry of colorCounts | async | keyvalue" [style.backgroundColor]="entry.key"
+      (click)="activeColor = entry.key"></button>
   </div>
 
   <div class="spacer"></div>
 
   <div class="button-group zoom">
-    <button
-      mat-button
-      (click)="zoomIn()"
-      matTooltip="Zoom in"
-      matTooltipPosition="right"
-    >
+    <button mat-button (click)="zoomIn()" matTooltip="Zoom in" matTooltipPosition="right">
       <mat-icon>zoom_in</mat-icon>
     </button>
-    <button
-      mat-button
-      (click)="zoomToFit()"
-      matTooltip="Zoom to fit screen"
-      matTooltipPosition="right"
-    >
+    <button mat-button (click)="zoomToFit()" matTooltip="Zoom to fit screen" matTooltipPosition="right">
       <mat-icon>fit_screen</mat-icon>
     </button>
-    <button
-      mat-button
-      (click)="zoomOut()"
-      matTooltip="Zoom out"
-      matTooltipPosition="right"
-    >
+    <button mat-button (click)="zoomOut()" matTooltip="Zoom out" matTooltipPosition="right">
       <mat-icon>zoom_out</mat-icon>
     </button>
   </div>
 </mat-toolbar>
 
 <div class="scroll-container">
-  <canvas
-    #canvas
-    (mousedown)="onMouseDown($event)"
-    (mousemove)="onMouseMove($event)"
-  ></canvas>
+  <canvas #canvas (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)"></canvas>
 </div>

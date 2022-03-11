@@ -44,6 +44,7 @@ function mergeDirtyAreas(
 export enum Tool {
   DRAW,
   FILL,
+  MAGIC_WAND,
 }
 
 /** Wrapper for CanvasRenderingContext2D with convenience editing functions.  */
@@ -118,6 +119,8 @@ export class EditableContext2D {
       return imageData.draw(x, y, color);
     } else if (tool === Tool.FILL) {
       return imageData.fill(x, y, color);
+    } else if (tool == Tool.MAGIC_WAND) {
+      return imageData.fill_all(x, y, color);
     } else {
       throw new Error(`Unknown tool ${tool}`);
     }
@@ -250,6 +253,24 @@ class EditableImageData {
       }
     }
 
+    return dirtyArea;
+  }
+
+  fill_all(x: number, y: number, fillColor: HexColor): DirtyArea | null {
+    const startColor = this.pick(x, y);
+    const dirtyArea: DirtyArea = { left: x, top: y, right: x, bottom: y };
+    for (let x = 0; x < this.imageData.width; x++) {
+      for (let y = 0; y < this.imageData.height; y++) {
+        const color = this.pick(x, y);
+        if (color == startColor) {
+          this.draw(x, y, fillColor);
+          dirtyArea.left = Math.min(dirtyArea.left, x);
+          dirtyArea.right = Math.max(dirtyArea.right, x);
+          dirtyArea.top = Math.min(dirtyArea.top, y);
+          dirtyArea.bottom = Math.max(dirtyArea.bottom, y);
+        }
+      }
+    }
     return dirtyArea;
   }
 
