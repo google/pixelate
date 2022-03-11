@@ -262,7 +262,7 @@ class EditableImageData {
     for (let x = 0; x < this.imageData.width; x++) {
       for (let y = 0; y < this.imageData.height; y++) {
         const color = this.pick(x, y);
-        if (color == startColor) {
+        if (color === startColor) {
           this.draw(x, y, fillColor);
           dirtyArea.left = Math.min(dirtyArea.left, x);
           dirtyArea.right = Math.max(dirtyArea.right, x);
