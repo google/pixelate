@@ -15,7 +15,7 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { HexColor } from '../canvas-editor/context';
+import { HexColor } from '../state';
 
 /** Instructions on how to assemble the pixel art mural. */
 @Component({
@@ -59,16 +59,24 @@ export class InstructionsComponent {
   @Output()
   readonly toggleBackgroundColor = new EventEmitter<HexColor>();
 
+  @Output()
+  readonly toggleRow = new EventEmitter<number>();
+
+  @Output()
+  readonly toggleColumn = new EventEmitter<number>();
+
   indices = new Map<HexColor, string>();
 
   colors: { color: HexColor; index: string; count: number }[] = [];
 
   @Input()
-  background: { [key in HexColor]: boolean } = {};
+  crossedOutColors = new Set<HexColor>();
 
-  readonly completedRows = new Map<number, boolean>();
+  @Input()
+  crossedOutRows = new Set<number>();
 
-  readonly completedCols = new Map<number, boolean>();
+  @Input()
+  crossedOutColumns = new Set<number>();
 
   get totalWidth() {
     return (this.pixels[0]?.length ?? 0) * 7.6;
@@ -80,7 +88,8 @@ export class InstructionsComponent {
 
   get totalCount() {
     return Array.from(this.colors.values()).reduce(
-      (sum, entry) => sum + (this.background[entry.color] ? 0 : entry.count),
+      (sum, entry) =>
+        sum + (this.crossedOutColors.has(entry.color) ? 0 : entry.count),
       0
     );
   }

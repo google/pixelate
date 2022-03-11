@@ -16,7 +16,6 @@
 
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { CanvasEditorComponent } from './canvas-editor/canvas-editor.component';
-import { HexColor } from './canvas-editor/context';
 import {
   ClipboardService,
   decodeBase64,
@@ -24,12 +23,8 @@ import {
   showFileDialog,
   StorageService,
 } from './io';
-import {
-  createBase64DataURL,
-  getAndClearBase64FromURL,
-  getModeFromURL,
-  Mode,
-} from './routing';
+import { UrlStateSerializer } from './routing';
+import { DEFAULT_STATE, HexColor, Mode, PersistableState } from './state';
 
 @Component({
   selector: 'app-root',
@@ -43,12 +38,17 @@ export class AppComponent implements AfterViewInit {
 
   @ViewChild(CanvasEditorComponent) canvas!: CanvasEditorComponent;
 
-  isBackgroundColor: { [key in HexColor]: boolean } = {};
+  crossedOutColors = new Set<HexColor>();
+
+  crossedOutRows = new Set<number>();
+
+  crossedOutColumns = new Set<number>();
 
   constructor(
     private readonly dragDropService: DragDropService,
     private readonly clipboardService: ClipboardService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly urlStateSerializer: UrlStateSerializer
   ) {}
 
   async ngAfterViewInit() {
@@ -59,19 +59,43 @@ export class AppComponent implements AfterViewInit {
       this.canvas.loadImageFile(file);
     });
 
-    this.mode = getModeFromURL() ?? Mode.DRAW;
-
-    const base64Data = getAndClearBase64FromURL() ?? this.storageService.read();
-    if (base64Data) {
-      const file = await decodeBase64(base64Data);
-      this.canvas.loadImageFile(file);
+    try {
+      const loadedState =
+        (await this.urlStateSerializer.read()) ??
+        (await this.storageService.read());
+      await this.setPersistableState({ ...DEFAULT_STATE, ...loadedState });
+    } finally {
+      this.urlStateSerializer.clear();
     }
 
     window.addEventListener('beforeunload', () => {
       if (this.canvas.hasImage) {
-        this.storageService.write(this.canvas.getDataURL());
+        this.storageService.save(this.getPersistableState());
       }
     });
+  }
+
+  getPersistableState(): PersistableState {
+    return {
+      image: this.canvas.getDataURL(),
+      activeColor: this.canvas.activeColor,
+      mode: this.mode,
+      crossedOutColors: Array.from(this.crossedOutColors),
+      crossedOutColumns: Array.from(this.crossedOutColumns),
+      crossedOutRows: Array.from(this.crossedOutRows),
+    };
+  }
+
+  async setPersistableState(state: PersistableState) {
+    if (state.image) {
+      const file = await decodeBase64(state.image);
+      await this.canvas.loadImageFile(file);
+    }
+    this.mode = state.mode;
+    this.canvas.activeColor = state.activeColor;
+    this.crossedOutColors = new Set(state.crossedOutColors);
+    this.crossedOutRows = new Set(state.crossedOutRows);
+    this.crossedOutColumns = new Set(state.crossedOutColumns);
   }
 
   uploadFile() {
@@ -97,8 +121,7 @@ export class AppComponent implements AfterViewInit {
   }
 
   async copyUrl() {
-    const data = this.canvas.canvas.nativeElement.toDataURL('png');
-    const url = createBase64DataURL(data, this.mode);
+    const url = this.urlStateSerializer.makeURL(this.getPersistableState());
     return navigator.clipboard.writeText(url);
   }
 
@@ -111,7 +134,23 @@ export class AppComponent implements AfterViewInit {
     }, 1);
   }
 
-  toggleBackgroundColor(color: HexColor) {
-    this.isBackgroundColor[color] = !this.isBackgroundColor[color];
+  toggleCrossedColor(color: HexColor) {
+    toggle(color, this.crossedOutColors);
+  }
+
+  toggleCrossedRow(row: number) {
+    toggle(row, this.crossedOutRows);
+  }
+
+  toggleCrossedColumn(column: number) {
+    toggle(column, this.crossedOutColumns);
+  }
+}
+
+function toggle<T>(value: T, set: Set<T>) {
+  if (set.has(value)) {
+    set.delete(value);
+  } else {
+    set.add(value);
   }
 }

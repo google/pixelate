@@ -12,10 +12,10 @@
           *ngFor="let row of colors"
           (click)="toggleBackgroundColor.next(row.color)"
           class="toggle-strikethrough"
-          [class.strikethrough]="background[row.color]"
+          [class.strikethrough]="crossedOutColors.has(row.color)"
         >
           <td [style]="{ backgroundColor: row.color }" class="text-center">
-            {{ background[row.color] ? "" : row.index }}
+            {{ crossedOutColors.has(row.color) ? "" : row.index }}
           </td>
           <td class="text-right">{{ row.count }}</td>
         </tr>
@@ -40,30 +40,26 @@
       <td
         *ngFor="let c of pixels[0]; let index = index"
         class="toggle"
-        (click)="completedCols.set(index, !(completedCols.get(index) ?? false))"
+        (click)="toggleColumn.next(index)"
       >
         {{ index + 1 }}
       </td>
       <td></td>
     </tr>
     <tr *ngFor="let row of pixels; let rowI = index">
-      <td
-        class="toggle"
-        (click)="completedRows.set(rowI, !(completedRows.get(rowI) ?? false))"
-      >
+      <td class="toggle" (click)="toggleRow.next(rowI)">
         {{ rowI + 1 }}
       </td>
       <td
         *ngFor="let col of row; let colI = index"
         [style]="{ backgroundColor: col }"
-        [class.completed]="completedRows.get(rowI) || completedCols.get(colI)"
+        [class.completed]="
+          crossedOutRows.has(rowI) || crossedOutColumns.has(colI)
+        "
       >
-        {{ background[col] ? "" : indices.get(col) }}
+        {{ crossedOutColors.has(col) ? "" : indices.get(col) }}
       </td>
-      <td
-        class="toggle"
-        (click)="completedRows.set(rowI, !(completedRows.get(rowI) ?? false))"
-      >
+      <td class="toggle" (click)="toggleRow.next(rowI)">
         {{ rowI + 1 }}
       </td>
     </tr>
@@ -72,7 +68,7 @@
       <td
         *ngFor="let c of pixels[0]; let index = index"
         class="toggle"
-        (click)="completedCols.set(index, !(completedCols.get(index) ?? false))"
+        (click)="toggleColumn.next(index)"
       >
         {{ index + 1 }}
       </td>

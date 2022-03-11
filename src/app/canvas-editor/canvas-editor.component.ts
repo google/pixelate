@@ -23,7 +23,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ReplaySubject } from 'rxjs';
-import { EditableContext2D, HexColor, Tool } from './context';
+import { HexColor, Tool } from '../state';
+import { EditableContext2D } from './context';
 
 const MAX_SCALE = 25;
 

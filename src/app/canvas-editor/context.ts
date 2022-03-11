@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-export type HexColor = `#${string}`;
+import { HexColor, hexToRgb, rgbToHex, Tool } from '../state';
 
 interface DirtyArea {
   left: number;
@@ -39,12 +39,6 @@ function mergeDirtyAreas(
       bottom: Math.max(a.bottom, b.bottom),
     };
   }
-}
-
-export enum Tool {
-  DRAW,
-  FILL,
-  MAGIC_WAND,
 }
 
 /** Wrapper for CanvasRenderingContext2D with convenience editing functions.  */
@@ -129,31 +123,6 @@ export class EditableContext2D {
   pick(x: number, y: number): HexColor {
     return this.imageData.pick(x, y);
   }
-}
-
-function toHex(a: number) {
-  return a.toString(16).padStart(2, '0');
-}
-
-function rgbToHex(r: number, g: number, b: number): HexColor {
-  if (r > 255 || g > 255 || b > 255) {
-    throw new Error(`Invalid color component ${r}, ${g}, ${b}`);
-  }
-  return `#${toHex(r) + toHex(g) + toHex(b)}`;
-}
-
-const HEX_REGEX = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
-
-function hexToRgb(hex: HexColor): [number, number, number] {
-  const result = HEX_REGEX.exec(hex);
-  if (!result) {
-    throw new Error(`Invalid color ${hex}`);
-  }
-  return [
-    parseInt(result[1], 16),
-    parseInt(result[2], 16),
-    parseInt(result[3], 16),
-  ];
 }
 
 /** Wrapper for ImageData with convenience editing functions. */

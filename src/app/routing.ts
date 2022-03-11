@@ -14,58 +14,32 @@
  limitations under the License.
  */
 
-export enum Mode {
-  DRAW,
-  ASSEMBLE,
-}
+import { Injectable } from '@angular/core';
+import {
+  deserializeState,
+  PersistableState,
+  serializeState,
+  StateSerializer,
+} from './state';
 
-const QUERY_PARAM_KEY = 'b';
-const MODE_PARAM_KEY = 'm';
-const MODE_VALUES = new Map([
-  [Mode.ASSEMBLE, 'a'],
-  [Mode.DRAW, 'd'],
-]);
-
-export function getAndClearBase64FromURL(): string | undefined {
-  const searchString = document.location.hash.slice(1);
-  const params = new URLSearchParams(searchString);
-  const base64Data = params.get(QUERY_PARAM_KEY);
-
-  if (base64Data && base64Data.startsWith('data:image/png;base64,')) {
-    params.delete(QUERY_PARAM_KEY);
-    document.location.hash = `#${params}`;
-    return base64Data;
-  } else {
-    return undefined;
-  }
-}
-
-export function getModeFromURL(searchString?: string): Mode | undefined {
-  if (searchString === undefined) {
-    searchString = document.location.hash.slice(1);
+@Injectable()
+export class UrlStateSerializer implements StateSerializer {
+  async clear(): Promise<void> {
+    document.location.hash = '';
   }
 
-  const key = new URLSearchParams(searchString).get(MODE_PARAM_KEY);
-
-  for (const [mode, modeKey] of MODE_VALUES.entries()) {
-    if (modeKey === key) {
-      return mode;
-    }
+  makeURL(state: PersistableState) {
+    const url = new URL(window.location.toString());
+    url.hash = `#${serializeState(state)}`;
+    return url.toString();
   }
 
-  return undefined;
-}
+  async save(state: PersistableState): Promise<void> {
+    document.location.hash = `#${serializeState(state)}`;
+  }
 
-export function createBase64DataURL(
-  data: string,
-  mode: Mode,
-  baseURL?: string
-) {
-  const params = new URLSearchParams({
-    [MODE_PARAM_KEY]: MODE_VALUES.get(mode) ?? '',
-    [QUERY_PARAM_KEY]: data,
-  });
-  const url = new URL(baseURL ?? window.location.toString());
-  url.hash = `#${params}`;
-  return url.toString();
+  async read(): Promise<Partial<PersistableState> | null> {
+    const params = document.location.hash.slice(1);
+    return params ? deserializeState(params) : null;
+  }
 }
