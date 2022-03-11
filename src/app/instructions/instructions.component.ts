@@ -15,7 +15,7 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { HexColor } from '../state';
+import { HexColor, hexToRgb, isLightColor } from '../state';
 
 /** Instructions on how to assemble the pixel art mural. */
 @Component({
@@ -50,11 +50,20 @@ export class InstructionsComponent {
       index: this.indices.get(color) ?? '',
       count,
     }));
+
+    this.textClasses = new Map(
+      Array.from(counts.keys()).map((color) => [
+        color,
+        isLightColor(hexToRgb(color)) ? 'dark-text' : 'light-text',
+      ])
+    );
   }
 
   get pixels() {
     return this.#pixels;
   }
+
+  textClasses = new Map<HexColor, string>();
 
   @Output()
   readonly toggleBackgroundColor = new EventEmitter<HexColor>();

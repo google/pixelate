@@ -14,7 +14,7 @@
           class="toggle-strikethrough"
           [class.strikethrough]="crossedOutColors.has(row.color)"
         >
-          <td [style]="{ backgroundColor: row.color }" class="text-center">
+          <td [style]="{ backgroundColor: row.color }" class="text-center" [class]="textClasses.get(row.color)">
             {{ crossedOutColors.has(row.color) ? "" : row.index }}
           </td>
           <td class="text-right">{{ row.count }}</td>
@@ -51,13 +51,14 @@
         {{ rowI + 1 }}
       </td>
       <td
-        *ngFor="let col of row; let colI = index"
-        [style]="{ backgroundColor: col }"
+        *ngFor="let color of row; let colI = index"
+        [style]="{ backgroundColor: color }"
         [class.completed]="
           crossedOutRows.has(rowI) || crossedOutColumns.has(colI)
         "
+        [class]="textClasses.get(color)"
       >
-        {{ crossedOutColors.has(col) ? "" : indices.get(col) }}
+        {{ crossedOutColors.has(color) ? "" : indices.get(color) }}
       </td>
       <td class="toggle" (click)="toggleRow.next(rowI)">
         {{ rowI + 1 }}

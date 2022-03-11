@@ -1,9 +1,9 @@
 <mat-toolbar class="main">
   <div class="spacer">
-    <button mat-button [matMenuTriggerFor]="saveMenu" matTooltip="Save">
+    <button mat-button [matMenuTriggerFor]="fileMenu">
       File
     </button>
-    <mat-menu #saveMenu="matMenu">
+    <mat-menu #fileMenu="matMenu">
       <button mat-menu-item (click)="newFile()">
         <mat-icon>note_add</mat-icon>
         New

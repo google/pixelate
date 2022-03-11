@@ -18,19 +18,52 @@
 
 @include mat.core();
 
-$my-primary: mat.define-palette(mat.$gray-palette, 600);
-$my-accent: mat.define-palette(mat.$cyan-palette, 600);
+$primary: mat.define-palette(mat.$gray-palette, 600);
+$accent: mat.define-palette(mat.$cyan-palette, 600);
 
-$my-theme: mat.define-light-theme(
+$light-theme: mat.define-light-theme(
   (
     color: (
-      primary: $my-primary,
-      accent: $my-accent,
+      primary: $primary,
+      accent: $accent,
     ),
   )
 );
 
-@include mat.all-component-themes($my-theme);
+@include mat.all-component-themes($light-theme);
+
+$dark-theme: mat.define-dark-theme(
+  (
+    color: (
+      primary: $primary,
+      accent: $accent,
+    ),
+  )
+);
+
+html {
+  --background-color: white;
+  --divider-color: #e0e0e0;
+  --color: rgba(0, 0, 0, 0.87);
+
+  .light-text {
+    color: rgba(255, 255, 255, 0.66);
+  }
+  
+  .dark-text {
+    color: rgba(0, 0, 0, 0.66);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  @include mat.all-component-colors($dark-theme);
+
+  html {
+    --background-color: #333;
+    --divider-color: #555;
+    --color: #dedede;
+  }
+}
 
 html,
 body {
@@ -38,6 +71,8 @@ body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   overscroll-behavior: contain;
+  background-color: var(--background-color);
+  color: var(--color);
 }
 
 *[hidden] {
