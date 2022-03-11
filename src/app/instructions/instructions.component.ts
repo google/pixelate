@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { HexColor } from '../canvas-editor/context';
 
 /** Instructions on how to assemble the pixel art mural. */
@@ -23,8 +23,41 @@ import { HexColor } from '../canvas-editor/context';
   templateUrl: './instructions.component.html',
   styleUrls: ['./instructions.component.scss'],
 })
-export class InstructionsComponent implements OnChanges {
-  @Input() pixels: ReadonlyArray<ReadonlyArray<HexColor>> = [];
+export class InstructionsComponent {
+  #pixels: ReadonlyArray<ReadonlyArray<HexColor>> = [];
+
+  @Input()
+  set pixels(pixels: ReadonlyArray<ReadonlyArray<HexColor>>) {
+    this.#pixels = pixels;
+    this.indices = new Map();
+    const counts = new Map<HexColor, number>();
+
+    for (const row of pixels) {
+      for (const color of row) {
+        let index = this.indices.get(color);
+        if (index === undefined) {
+          index = String.fromCharCode('a'.charCodeAt(0) + this.indices.size);
+          this.indices.set(color, index);
+        }
+
+        const count = counts.get(color) ?? 0;
+        counts.set(color, count + 1);
+      }
+    }
+
+    this.colors = Array.from(counts.entries()).map(([color, count]) => ({
+      color,
+      index: this.indices.get(color) ?? '',
+      count,
+    }));
+  }
+
+  get pixels() {
+    return this.#pixels;
+  }
+
+  @Output()
+  readonly toggleBackgroundColor = new EventEmitter<HexColor>();
 
   indices = new Map<HexColor, string>();
 
@@ -79,29 +112,5 @@ export class InstructionsComponent implements OnChanges {
 
   isHalf(index: number, total: number) {
     return Math.trunc(total / 2) === index;
-  }
-
-  ngOnChanges(): void {
-    this.indices = new Map();
-    const counts = new Map<HexColor, number>();
-
-    for (const row of this.pixels) {
-      for (const color of row) {
-        let index = this.indices.get(color);
-        if (index === undefined && !this.background[color]) {
-          index = String.fromCharCode('a'.charCodeAt(0) + this.indices.size);
-          this.indices.set(color, index);
-        }
-
-        const count = counts.get(color) ?? 0;
-        counts.set(color, count + 1);
-      }
-    }
-
-    this.colors = Array.from(counts.entries()).map(([color, count]) => ({
-      color,
-      index: this.indices.get(color) ?? '',
-      count,
-    }));
   }
 }

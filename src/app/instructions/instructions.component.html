@@ -5,21 +5,19 @@
         <tr>
           <th>Color</th>
           <th>Count</th>
-          <th>BG</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of colors">
+        <tr
+          *ngFor="let row of colors"
+          (click)="toggleBackgroundColor.next(row.color)"
+          class="toggle-strikethrough"
+          [class.strikethrough]="background[row.color]"
+        >
           <td [style]="{ backgroundColor: row.color }" class="text-center">
-            {{ row.index }}
+            {{ background[row.color] ? "" : row.index }}
           </td>
           <td class="text-right">{{ row.count }}</td>
-          <td>
-            <mat-checkbox
-              [(ngModel)]="background[row.color]"
-              (change)="ngOnChanges()"
-            ></mat-checkbox>
-          </td>
         </tr>
       </tbody>
     </table>
@@ -60,7 +58,7 @@
         [style]="{ backgroundColor: col }"
         [class.completed]="completedRows.get(rowI) || completedCols.get(colI)"
       >
-        {{ indices.get(col) }}
+        {{ background[col] ? "" : indices.get(col) }}
       </td>
       <td
         class="toggle"
