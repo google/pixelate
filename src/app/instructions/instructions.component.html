@@ -14,7 +14,11 @@
           class="toggle-strikethrough"
           [class.strikethrough]="crossedOutColors.has(row.color)"
         >
-          <td [style]="{ backgroundColor: row.color }" class="text-center" [class]="textClasses.get(row.color)">
+          <td
+            [style]="{ backgroundColor: row.color }"
+            class="text-center"
+            [class]="textClasses.get(row.color)"
+          >
             {{ crossedOutColors.has(row.color) ? "" : row.index }}
           </td>
           <td class="text-right">{{ row.count }}</td>
