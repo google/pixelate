@@ -21,10 +21,14 @@
     "prepare": "husky install"
   },
   "lint-staged": {
-    "*": [
+    "*.html": [
+      "prettier --write"
+    ],
+    "*.scss": [
       "prettier --write"
     ],
     "*.ts": [
+      "prettier --write",
       "eslint --max-warnings=0"
     ]
   },

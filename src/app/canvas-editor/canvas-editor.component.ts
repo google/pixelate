@@ -71,18 +71,22 @@ export class CanvasEditorComponent implements AfterViewInit {
     this.hasImage = false;
   }
 
-  async loadImageFile(imageFile: File) {
+  loadImage(img: HTMLImageElement) {
     if (!this.ctx) {
       return;
     }
 
-    const img = await loadImageFile(imageFile);
     this.ctx.resetToImage(img);
     this.zoomToFit();
     this.activeColor = this.ctx.pick(0, 0);
     this.colorCounts.next(this.ctx.count());
     this.pixels.next(this.ctx.pixels());
     this.hasImage = true;
+  }
+
+  async loadImageFile(imageFile: File) {
+    const img = await loadImageFile(imageFile);
+    this.loadImage(img);
   }
 
   set zoom(zoom: number) {
