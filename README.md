@@ -1,5 +1,7 @@
 # Pixelate
 
+![Screenshot](https://user-images.githubusercontent.com/864168/158417934-5366ef2e-1ca6-454f-b4b6-cc41454bc733.png)
+
 Create amazing pixel art murals with sticky notes. Pixelate is a image editor that shows assembly guides to put art with sticky notes on your wall.
 
 ## Contributing
@@ -27,4 +29,8 @@ Please read [CONTRIBUTING](./CONTRIBUTING.md), then [open an issue](https://gith
 
 ## About
 
-Licensed under [Apache 2.0](./LICENSE). This is not an officially supported Google product.
+![Tree Frog Logo](./src/assets/logo_15x.png)
+
+Pixelate is a community effort of pixel art lovers, not an officially supported Google product. The project is licensed under [Apache 2.0](./LICENSE). The tree frog logo was created by [Ota Jaider](https://twitter.com/ota_pixelart) for Pixelate.
+
+Copyright 2021 [The Pixelate Authors](./AUTHORS)

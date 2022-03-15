@@ -1,5 +1,7 @@
 <mat-toolbar class="main">
   <div class="spacer">
+    <img src="assets/logo.png" width="60" height="50" class="logo" alt="" />
+
     <button mat-button [matMenuTriggerFor]="fileMenu">File</button>
     <mat-menu #fileMenu="matMenu">
       <button mat-menu-item (click)="newFile()">
@@ -68,6 +70,19 @@
 ></app-canvas-editor>
 
 <div class="empty-page" *ngIf="!canvas.hasImage">
+  <button mat-flat-button>
+    <img
+      #exampleImage
+      src="assets/logo.png"
+      alt="Edit the pixelated tree frog."
+      width="240"
+      height="200"
+      matTooltip="Click to edit the pixelated tree frog as example."
+      matTooltipPosition="above"
+      (click)="canvas.loadImage(exampleImage)"
+    />
+  </button>
+
   <h2>Open, paste, or drop a small pixel art image.</h2>
 </div>
 
