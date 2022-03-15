@@ -28,6 +28,10 @@
   overflow: auto;
   height: 100%;
   align-items: flex-start;
+
+  table {
+    margin: 28px auto 50px;
+  }
 }
 
 mat-toolbar.vertical {
@@ -42,8 +46,8 @@ mat-toolbar.vertical {
 
 .grid {
   td {
-    min-width: 20px;
-    height: 20px;
+    min-width: 21px;
+    height: 21px;
     vertical-align: middle;
     text-align: center;
   }
