@@ -142,14 +142,16 @@ export function deserializeState(str: string): Partial<PersistableState> {
     params.get(QUERY_KEYS['crossedOutColumns']) ?? ''
   );
   if (crossedOutColumns.length) {
-    state.crossedOutColumns = crossedOutColumns;
+    // Deserialize 1-based indices to 0-based indices.
+    state.crossedOutColumns = crossedOutColumns.map((n) => n - 1);
   }
 
   const crossedOutRows = parseNumberArray(
     params.get(QUERY_KEYS['crossedOutRows']) ?? ''
   );
   if (crossedOutRows.length) {
-    state.crossedOutRows = crossedOutRows;
+    // Deserialize 1-based indices to 0-based indices.
+    state.crossedOutRows = crossedOutRows.map((n) => n - 1);
   }
 
   const mode = params.get(QUERY_KEYS['mode']);
@@ -166,8 +168,13 @@ export function serializeState(state: PersistableState): string {
     [QUERY_KEYS['activeColor']]: state.activeColor,
     [QUERY_KEYS['image']]: state.image,
     [QUERY_KEYS['crossedOutColors']]: state.crossedOutColors.join(','),
-    [QUERY_KEYS['crossedOutColumns']]: state.crossedOutColumns.join(','),
-    [QUERY_KEYS['crossedOutRows']]: state.crossedOutRows.join(','),
+    // Serialize 0-based indices to 1-based indices.
+    [QUERY_KEYS['crossedOutColumns']]: state.crossedOutColumns
+      .map((n) => n + 1)
+      .join(','),
+    [QUERY_KEYS['crossedOutRows']]: state.crossedOutRows
+      .map((n) => n + 1)
+      .join(','),
     [QUERY_KEYS['mode']]: state.mode,
   }).toString();
 }
