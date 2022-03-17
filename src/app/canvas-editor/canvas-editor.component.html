@@ -37,7 +37,9 @@
     matTooltip="Pick color"
     matTooltipPosition="right"
   >
-    <mat-icon class="label">colorize</mat-icon>
+    <mat-icon class="label {{ activeColorLight ? 'dark-text' : 'light-text' }}"
+      >colorize</mat-icon
+    >
     <input type="color" [(ngModel)]="activeColor" />
   </button>
 
@@ -46,8 +48,8 @@
   <div class="colors">
     <button
       mat-button
-      *ngFor="let entry of colorCounts | async | keyvalue"
-      [style.backgroundColor]="entry.key"
+      *ngFor="let entry of colorCounts | async | keyvalue; trackBy: trackByKey"
+      [style]="{ backgroundColor: entry.key }"
       (click)="activeColor = entry.key"
     ></button>
   </div>
