@@ -14,16 +14,18 @@
  limitations under the License.
  */
 
+import { KeyValue } from '@angular/common';
 import {
   AfterViewInit,
   Component,
   ElementRef,
   Input,
   Output,
+  TrackByFunction,
   ViewChild,
 } from '@angular/core';
 import { ReplaySubject } from 'rxjs';
-import { HexColor, Tool } from '../state';
+import { HexColor, hexToRgb, isLightColor, Tool } from '../state';
 import { EditableContext2D } from './context';
 
 const MAX_SCALE = 25;
@@ -44,6 +46,10 @@ export class CanvasEditorComponent implements AfterViewInit {
   @Input() activeTool: Tool = Tool.DRAW;
 
   @Input() activeColor: HexColor = '#000000';
+
+  get activeColorLight() {
+    return isLightColor(hexToRgb(this.activeColor));
+  }
 
   @Output() readonly colorCounts = new ReplaySubject<
     ReadonlyMap<HexColor, number>
@@ -189,6 +195,11 @@ export class CanvasEditorComponent implements AfterViewInit {
   getDataURL() {
     return this.canvas.nativeElement.toDataURL('image/png');
   }
+
+  readonly trackByKey: TrackByFunction<KeyValue<HexColor, number>> = (
+    index,
+    { key }
+  ) => key;
 }
 
 async function loadImageFile(imageFile: File): Promise<HTMLImageElement> {

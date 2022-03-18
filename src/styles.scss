@@ -45,6 +45,7 @@ html {
   --background-color: white;
   --divider-color: #e0e0e0;
   --color: rgba(0, 0, 0, 0.87);
+  --accent-border: rgba(0, 0, 0, 0.1);
 
   .light-text {
     color: rgba(255, 255, 255, 0.66);
@@ -62,6 +63,7 @@ html {
     --background-color: #333;
     --divider-color: #555;
     --color: #dedede;
+    --accent-border: rgba(255, 255, 255, 0.3);
   }
 }
 

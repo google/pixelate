@@ -42,13 +42,14 @@ canvas {
 .colors {
   display: flex;
   flex-direction: column;
-  row-gap: 1px;
+  row-gap: 3px;
   padding: 0 4px;
 
   .mat-button {
     padding: 0;
     min-width: 48px;
     min-height: 30px;
+    border: 1px solid var(--accent-border);
   }
 }
 
