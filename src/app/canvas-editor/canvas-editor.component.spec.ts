@@ -14,27 +14,46 @@
  limitations under the License.
  */
 
+import { Component, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AppModule } from '../app.module';
+import { EditableImageData, getImageData } from '../image';
+import { load1x1Img } from '../test_util';
 
 import { CanvasEditorComponent } from './canvas-editor.component';
 
+@Component({
+  template: `<app-canvas-editor [imageData]="imageData"></app-canvas-editor>`,
+})
+class TestHostComponent {
+  @Input()
+  imageData?: EditableImageData;
+
+  @ViewChild(CanvasEditorComponent)
+  component!: CanvasEditorComponent;
+}
+
 describe('CanvasEditorComponent', () => {
-  let component: CanvasEditorComponent;
-  let fixture: ComponentFixture<CanvasEditorComponent>;
+  let hostComponent: TestHostComponent;
+  let fixture: ComponentFixture<TestHostComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CanvasEditorComponent],
+      imports: [AppModule],
+      declarations: [CanvasEditorComponent, TestHostComponent],
     }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(CanvasEditorComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    fixture = TestBed.createComponent(TestHostComponent);
+    hostComponent = fixture.componentInstance;
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should create', async () => {
+    const img = await load1x1Img();
+    hostComponent.imageData = new EditableImageData(getImageData(img));
+    fixture.detectChanges(); // Runs OnInit.
+
+    expect(hostComponent.component).toBeTruthy();
   });
 });
