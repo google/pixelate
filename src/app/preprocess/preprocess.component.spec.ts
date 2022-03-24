@@ -17,30 +17,29 @@
 import { Component, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppModule } from '../app.module';
-import { EditableImageData, getImageData } from '../image';
 import { load1x1Img } from '../test_util';
 
-import { CanvasEditorComponent } from './canvas-editor.component';
+import { PreprocessComponent } from './preprocess.component';
 
 @Component({
-  template: `<app-canvas-editor [imageData]="imageData"></app-canvas-editor>`,
+  template: `<app-preprocess [img]="img"></app-preprocess>`,
 })
 class TestHostComponent {
   @Input()
-  imageData?: EditableImageData;
+  img?: HTMLImageElement;
 
-  @ViewChild(CanvasEditorComponent)
-  component!: CanvasEditorComponent;
+  @ViewChild(PreprocessComponent)
+  component!: PreprocessComponent;
 }
 
-describe('CanvasEditorComponent', () => {
+describe('PreprocessComponent', () => {
   let hostComponent: TestHostComponent;
   let fixture: ComponentFixture<TestHostComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppModule],
-      declarations: [CanvasEditorComponent, TestHostComponent],
+      declarations: [PreprocessComponent, TestHostComponent],
     }).compileComponents();
   });
 
@@ -50,8 +49,7 @@ describe('CanvasEditorComponent', () => {
   });
 
   it('should create', async () => {
-    const img = await load1x1Img();
-    hostComponent.imageData = new EditableImageData(getImageData(img));
+    hostComponent.img = await load1x1Img();
     fixture.detectChanges(); // Runs OnInit.
 
     expect(hostComponent.component).toBeTruthy();

@@ -14,28 +14,55 @@
  limitations under the License.
  */
 
+import { TruthyTypesOf } from 'rxjs';
+import { EditableImageData, getImageData } from './image';
+import { decodeBase64, loadImageFile } from './io';
+
 export enum Mode {
+  NEW = 'n',
+  PREPROCESS = 'p',
   DRAW = 'd',
   ASSEMBLE = 'a',
 }
 
-export interface PersistableState {
-  image: string;
-  mode: Mode;
-  crossedOutColors: HexColor[];
-  crossedOutRows: number[];
-  crossedOutColumns: number[];
+export interface CanvasEditorState {
   activeColor: HexColor;
+  activeTool: Tool;
 }
 
-export const DEFAULT_STATE: Readonly<PersistableState> = {
-  activeColor: '#000000',
-  crossedOutColors: [],
-  crossedOutColumns: [],
-  crossedOutRows: [],
-  image: '',
-  mode: Mode.DRAW,
-};
+export interface InstructionsState {
+  crossedOutColors: Set<HexColor>;
+  crossedOutRows: Set<number>;
+  crossedOutColumns: Set<number>;
+}
+
+export type PersistableState =
+  | {
+      mode: Mode.NEW;
+    }
+  | EditState;
+
+export interface EditState {
+  mode: Mode.PREPROCESS | Mode.DRAW | Mode.ASSEMBLE;
+  imageData: EditableImageData;
+  canvasEditorState: CanvasEditorState;
+  instructionsState: InstructionsState;
+}
+
+export function getDefaultDrawState(): Omit<EditState, 'imageData'> {
+  return {
+    mode: Mode.DRAW,
+    canvasEditorState: {
+      activeColor: '#000000',
+      activeTool: Tool.DRAW,
+    },
+    instructionsState: {
+      crossedOutColors: new Set(),
+      crossedOutColumns: new Set(),
+      crossedOutRows: new Set(),
+    },
+  };
+}
 
 export type HexColor = `#${string}`;
 
@@ -50,15 +77,19 @@ interface StringEnum<T> {
 }
 
 export function isEnum<T extends string>(
-  value: string,
+  value: string | null | undefined,
   enumType: StringEnum<T>
 ): value is T {
+  if (value === null || value === undefined) {
+    return false;
+  }
+
   return Object.values(enumType).includes(value);
 }
 
 export interface StateSerializer {
-  save(state: PersistableState): Promise<void>;
-  read(): Promise<Partial<PersistableState> | null>;
+  save(state: EditState): Promise<void>;
+  read(): Promise<DeepPartial<EditState> | null>;
   clear(): Promise<void>;
 }
 
@@ -100,14 +131,14 @@ export function isHexColor(hex: HexColor | string): hex is HexColor {
   }
 }
 
-const QUERY_KEYS: { [key in keyof PersistableState]: string } = {
+const QUERY_KEYS = {
   activeColor: 'c',
   crossedOutColors: 'bg',
   crossedOutColumns: 'cols',
   crossedOutRows: 'rows',
   image: 'b',
   mode: 'm',
-};
+} as const;
 
 function parseNumberArray(str: string): number[] {
   return str
@@ -116,18 +147,36 @@ function parseNumberArray(str: string): number[] {
     .filter((n) => !isNaN(n));
 }
 
-export function deserializeState(str: string): Partial<PersistableState> {
+export async function deserializeState(
+  str: string
+): Promise<DeepPartial<EditState>> {
   const params = new URLSearchParams(str);
-  const state: Partial<PersistableState> = {};
 
   const image = params.get(QUERY_KEYS['image']);
-  if (image && image.startsWith('data:image/png;base64,')) {
-    state.image = image;
+  const mode = params.get(QUERY_KEYS['mode']);
+  if (
+    !image ||
+    !image.startsWith('data:image/png;base64,') ||
+    !isEnum(mode, Mode) ||
+    (mode !== Mode.PREPROCESS && mode !== Mode.ASSEMBLE && mode !== Mode.DRAW)
+  ) {
+    return {};
   }
+
+  const file = await decodeBase64(image);
+  const img = await loadImageFile(file);
+  const imageData = new EditableImageData(getImageData(img));
+
+  const state = {
+    imageData,
+    mode,
+    canvasEditorState: {} as Partial<CanvasEditorState>,
+    instructionsState: {} as Partial<InstructionsState>,
+  };
 
   const activeColor = params.get(QUERY_KEYS['activeColor']);
   if (activeColor && isHexColor(activeColor)) {
-    state.activeColor = activeColor;
+    state.canvasEditorState.activeColor = activeColor;
   }
 
   const crossedOutColors = params
@@ -135,7 +184,7 @@ export function deserializeState(str: string): Partial<PersistableState> {
     ?.split(',')
     .filter(isHexColor);
   if (crossedOutColors?.length) {
-    state.crossedOutColors = crossedOutColors;
+    state.instructionsState.crossedOutColors = new Set(crossedOutColors);
   }
 
   const crossedOutColumns = parseNumberArray(
@@ -143,7 +192,9 @@ export function deserializeState(str: string): Partial<PersistableState> {
   );
   if (crossedOutColumns.length) {
     // Deserialize 1-based indices to 0-based indices.
-    state.crossedOutColumns = crossedOutColumns.map((n) => n - 1);
+    state.instructionsState.crossedOutColumns = new Set(
+      crossedOutColumns.map((n) => n - 1)
+    );
   }
 
   const crossedOutRows = parseNumberArray(
@@ -151,30 +202,76 @@ export function deserializeState(str: string): Partial<PersistableState> {
   );
   if (crossedOutRows.length) {
     // Deserialize 1-based indices to 0-based indices.
-    state.crossedOutRows = crossedOutRows.map((n) => n - 1);
+    state.instructionsState.crossedOutRows = new Set(
+      crossedOutRows.map((n) => n - 1)
+    );
   }
 
-  const mode = params.get(QUERY_KEYS['mode']);
-  if (mode && isEnum(mode, Mode)) {
-    state.mode = mode;
-  }
-
-  document.location.hash = '';
   return state;
 }
 
-export function serializeState(state: PersistableState): string {
+export function serializeState(state: EditState): string {
   return new URLSearchParams({
-    [QUERY_KEYS['activeColor']]: state.activeColor,
-    [QUERY_KEYS['image']]: state.image,
-    [QUERY_KEYS['crossedOutColors']]: state.crossedOutColors.join(','),
+    [QUERY_KEYS['activeColor']]: state.canvasEditorState.activeColor,
+    [QUERY_KEYS['image']]: state.imageData.toDataURL(),
+    [QUERY_KEYS['crossedOutColors']]: Array.from(
+      state.instructionsState.crossedOutColors
+    ).join(','),
     // Serialize 0-based indices to 1-based indices.
-    [QUERY_KEYS['crossedOutColumns']]: state.crossedOutColumns
+    [QUERY_KEYS['crossedOutColumns']]: Array.from(
+      state.instructionsState.crossedOutColumns
+    )
       .map((n) => n + 1)
       .join(','),
-    [QUERY_KEYS['crossedOutRows']]: state.crossedOutRows
+    [QUERY_KEYS['crossedOutRows']]: Array.from(
+      state.instructionsState.crossedOutRows
+    )
       .map((n) => n + 1)
       .join(','),
     [QUERY_KEYS['mode']]: state.mode,
   }).toString();
 }
+
+export function requireNonNull<T>(
+  value: T | null | undefined,
+  msg?: string
+): NonNullable<typeof value> {
+  if (value === null || value === undefined) {
+    throw new Error(msg ?? 'Expected value to be neither null nor undefined.');
+  }
+  return value as NonNullable<T>;
+}
+
+export function requireTruthy<T>(
+  value: T | null | undefined,
+  msg?: string
+): TruthyTypesOf<typeof value> {
+  if (!value) {
+    throw new Error(msg ?? `Expected value to be truthy, got ${value}`);
+  }
+  return value as TruthyTypesOf<T>;
+}
+
+export function assert<T>(
+  value: T | null | undefined,
+  msg?: string
+): asserts value is TruthyTypesOf<T> {
+  if (!value) {
+    throw new Error(msg ?? `Expected value to be truthy, got ${value}`);
+  }
+}
+
+export function assertTrue(
+  value: boolean | null | undefined,
+  msg?: string
+): asserts value is true {
+  if (!value) {
+    throw new Error(msg ?? `Expected value to be truthy, got ${value}`);
+  }
+}
+
+export type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
+  : T;

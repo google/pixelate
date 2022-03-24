@@ -19,14 +19,22 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
+  OnInit,
   Output,
   TrackByFunction,
   ViewChild,
 } from '@angular/core';
-import { ReplaySubject } from 'rxjs';
-import { HexColor, hexToRgb, isLightColor, Tool } from '../state';
-import { EditableContext2D } from './context';
+import {
+  CanvasEditorState,
+  HexColor,
+  hexToRgb,
+  isLightColor,
+  requireNonNull,
+  Tool,
+} from '../state';
+import { EditableCanvas, EditableImageData, Operation } from '../image';
 
 const MAX_SCALE = 25;
 
@@ -36,72 +44,52 @@ const MAX_SCALE = 25;
   templateUrl: './canvas-editor.component.html',
   styleUrls: ['./canvas-editor.component.scss'],
 })
-export class CanvasEditorComponent implements AfterViewInit {
+export class CanvasEditorComponent implements OnInit, AfterViewInit {
   readonly Tool = Tool;
 
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
-  private ctx!: EditableContext2D;
+  private editableCanvas!: EditableCanvas;
 
-  @Input() activeTool: Tool = Tool.DRAW;
+  @Input() state: CanvasEditorState = {
+    activeTool: Tool.DRAW,
+    activeColor: '#000000',
+  };
 
-  @Input() activeColor: HexColor = '#000000';
+  @Output() readonly stateChange = new EventEmitter<CanvasEditorState>();
+
+  @Input() imageData!: EditableImageData;
+
+  colorCounts: ReadonlyMap<HexColor, number> = new Map();
 
   get activeColorLight() {
-    return isLightColor(hexToRgb(this.activeColor));
+    return isLightColor(hexToRgb(this.state.activeColor));
   }
 
-  @Output() readonly colorCounts = new ReplaySubject<
-    ReadonlyMap<HexColor, number>
-  >(1);
-
-  @Output() readonly pixels = new ReplaySubject<
-    ReadonlyArray<ReadonlyArray<HexColor>>
-  >(1);
-
-  hasImage = false;
+  ngOnInit(): void {
+    requireNonNull(this.imageData);
+    this.colorCounts = this.imageData.count();
+  }
 
   ngAfterViewInit(): void {
-    const ctx = this.canvas.nativeElement.getContext('2d');
-
-    if (!ctx) {
-      throw new Error('CanvasRenderingContext2D is null');
-    }
-
-    ctx.imageSmoothingEnabled = false;
-
-    this.ctx = new EditableContext2D(ctx);
-  }
-
-  clear() {
-    this.hasImage = false;
-  }
-
-  loadImage(img: HTMLImageElement) {
-    if (!this.ctx) {
-      return;
-    }
-
-    this.ctx.resetToImage(img);
+    this.editableCanvas = new EditableCanvas(
+      this.canvas.nativeElement,
+      this.imageData
+    );
     this.zoomToFit();
-    this.activeColor = this.ctx.pick(0, 0);
-    this.colorCounts.next(this.ctx.count());
-    this.pixels.next(this.ctx.pixels());
-    this.hasImage = true;
-  }
-
-  async loadImageFile(imageFile: File) {
-    const img = await loadImageFile(imageFile);
-    this.loadImage(img);
   }
 
   set zoom(zoom: number) {
-    this.canvas.nativeElement.style.width = `${this.ctx.width * zoom}px`;
-    this.canvas.nativeElement.style.height = `${this.ctx.height * zoom}px`;
+    this.canvas.nativeElement.style.width = `${
+      this.editableCanvas.width * zoom
+    }px`;
+    this.canvas.nativeElement.style.height = `${
+      this.editableCanvas.height * zoom
+    }px`;
   }
 
   get zoom() {
-    return this.canvas.nativeElement.offsetWidth / this.ctx.width;
+    return this.canvas.nativeElement.offsetWidth / this.editableCanvas.width;
   }
 
   zoomToFit() {
@@ -109,8 +97,8 @@ export class CanvasEditorComponent implements AfterViewInit {
       Math.max(
         1,
         Math.min(
-          (window.innerWidth / this.ctx.width) * 0.9,
-          (window.innerHeight / this.ctx.height) * 0.9,
+          (window.innerWidth / this.editableCanvas.width) * 0.9,
+          (window.innerHeight / this.editableCanvas.height) * 0.9,
           MAX_SCALE
         )
       )
@@ -125,7 +113,7 @@ export class CanvasEditorComponent implements AfterViewInit {
     this.zoom = Math.max(1, this.zoom - 1);
   }
 
-  readonly bufferedCoords: [Tool, HexColor, number, number][] = [];
+  readonly bufferedOperations: Operation[] = [];
   animationFrameId = 0;
 
   onMouseDown(event: MouseEvent) {
@@ -137,37 +125,42 @@ export class CanvasEditorComponent implements AfterViewInit {
 
     // Math.min() prevents edge case of editing pixel that is slightly outside of canvas.
     const x = Math.min(
-      this.ctx.width - 1,
+      this.editableCanvas.width - 1,
       Math.trunc(event.offsetX / this.zoom)
     );
     const y = Math.min(
-      this.ctx.height - 1,
+      this.editableCanvas.height - 1,
       Math.trunc(event.offsetY / this.zoom)
     );
-    const previous = this.bufferedCoords[this.bufferedCoords.length - 1];
+    const previous =
+      this.bufferedOperations[this.bufferedOperations.length - 1];
 
     if (
       previous &&
-      previous[0] === this.activeTool &&
-      previous[1] === this.activeColor &&
-      previous[2] === x &&
-      previous[3] === y
+      previous.tool === this.state.activeTool &&
+      previous.color === this.state.activeColor &&
+      previous.x === x &&
+      previous.y === y
     ) {
       return;
     }
 
-    this.bufferedCoords.push([this.activeTool, this.activeColor, x, y]);
+    this.bufferedOperations.push({
+      tool: this.state.activeTool,
+      color: this.state.activeColor,
+      x,
+      y,
+    });
 
-    if (this.bufferedCoords.length > 1) {
+    if (this.bufferedOperations.length > 1) {
       return;
     }
 
     this.animationFrameId = requestAnimationFrame(() => {
-      this.ctx.applyMany(this.bufferedCoords);
+      this.editableCanvas.applyMany(this.bufferedOperations);
       this.animationFrameId = 0;
-      this.bufferedCoords.length = 0;
-      this.colorCounts.next(this.ctx.count());
-      this.pixels.next(this.ctx.pixels());
+      this.bufferedOperations.length = 0;
+      this.colorCounts = this.editableCanvas.count();
     });
   }
 
@@ -175,42 +168,8 @@ export class CanvasEditorComponent implements AfterViewInit {
     this.onMouseDown(event);
   }
 
-  getBlob(): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      this.canvas.nativeElement.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Empty blob'));
-        }
-      }, 'image/png');
-    });
-  }
-
-  async getFile(): Promise<File> {
-    const blob = await this.getBlob();
-    return new File([blob], 'pixelate.png');
-  }
-
-  getDataURL() {
-    return this.canvas.nativeElement.toDataURL('image/png');
-  }
-
   readonly trackByKey: TrackByFunction<KeyValue<HexColor, number>> = (
     index,
     { key }
   ) => key;
-}
-
-async function loadImageFile(imageFile: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onerror = (e) => {
-      reject(e);
-    };
-    img.onload = () => {
-      resolve(img);
-    };
-    img.src = URL.createObjectURL(imageFile);
-  });
 }

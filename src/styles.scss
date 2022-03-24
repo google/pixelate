@@ -166,6 +166,11 @@ html {
   }
 }
 
-img {
+img,
+canvas {
   image-rendering: pixelated;
+}
+
+.text-center {
+  text-align: center;
 }

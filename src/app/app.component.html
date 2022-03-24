@@ -18,35 +18,42 @@
 
       <hr />
 
-      <button
-        mat-menu-item
-        (click)="downloadPng()"
-        [disabled]="!canvas.hasImage"
-      >
+      <button mat-menu-item (click)="downloadPng()" [disabled]="!hasImage">
         <mat-icon>download</mat-icon>
         Download image
       </button>
-      <button mat-menu-item (click)="copyImage()" [disabled]="!canvas.hasImage">
+      <button mat-menu-item (click)="copyImage()" [disabled]="!hasImage">
         <mat-icon>content_copy</mat-icon>
         Copy image
       </button>
-      <button mat-menu-item (click)="copyUrl()" [disabled]="!canvas.hasImage">
+      <button mat-menu-item (click)="copyUrl()" [disabled]="!hasImage">
         <mat-icon>link</mat-icon>
         Copy link to image
       </button>
     </mat-menu>
 
-    <div class="divider" *ngIf="canvas.hasImage"></div>
+    <div class="divider"></div>
   </div>
 
-  <nav mat-tab-nav-bar *ngIf="canvas.hasImage" class="hide-mobile">
-    <a mat-tab-link (click)="mode = Mode.DRAW" [active]="mode === Mode.DRAW">
+  <nav mat-tab-nav-bar *ngIf="state.mode !== Mode.NEW" class="hide-mobile">
+    <a
+      mat-tab-link
+      (click)="state.mode = Mode.PREPROCESS"
+      [active]="state.mode === Mode.PREPROCESS"
+    >
+      <mat-icon>crop</mat-icon> Preprocess
+    </a>
+    <a
+      mat-tab-link
+      (click)="state.mode = Mode.DRAW"
+      [active]="state.mode === Mode.DRAW"
+    >
       <mat-icon>edit</mat-icon> Draw
     </a>
     <a
       mat-tab-link
-      (click)="mode = Mode.ASSEMBLE"
-      [active]="mode === Mode.ASSEMBLE"
+      (click)="state.mode = Mode.ASSEMBLE"
+      [active]="state.mode === Mode.ASSEMBLE"
     >
       <mat-icon>grid_on</mat-icon> Assemble
     </a>
@@ -64,12 +71,7 @@
   </div>
 </mat-toolbar>
 
-<app-canvas-editor
-  #canvas
-  [hidden]="mode !== Mode.DRAW || !canvas.hasImage"
-></app-canvas-editor>
-
-<div class="empty-page" *ngIf="!canvas.hasImage">
+<div class="empty-page" *ngIf="state.mode === Mode.NEW">
   <button mat-flat-button>
     <img
       #exampleImage
@@ -79,20 +81,30 @@
       height="200"
       matTooltip="Click to edit the pixelated tree frog as example."
       matTooltipPosition="above"
-      (click)="canvas.loadImage(exampleImage)"
+      (click)="openDrawMode(exampleImage)"
     />
   </button>
 
   <h2>Open, paste, or drop a small pixel art image.</h2>
 </div>
 
+<ng-container *ngIf="state.mode === Mode.PREPROCESS">
+  <app-preprocess
+    *ngIf="stateImageDataAsImg | async as img"
+    [img]="img"
+    (imageDataOnDestroy)="state.imageData = $event"
+  ></app-preprocess>
+</ng-container>
+
+<app-canvas-editor
+  #canvas
+  *ngIf="state.mode === Mode.DRAW"
+  [imageData]="state.imageData"
+  [(state)]="state.canvasEditorState"
+></app-canvas-editor>
+
 <app-instructions
-  *ngIf="mode === Mode.ASSEMBLE && (canvas.pixels | async) as pixels"
-  [pixels]="pixels"
-  [crossedOutColors]="crossedOutColors"
-  [crossedOutRows]="crossedOutRows"
-  [crossedOutColumns]="crossedOutColumns"
-  (toggleBackgroundColor)="toggleCrossedColor($event)"
-  (toggleColumn)="toggleCrossedColumn($event)"
-  (toggleRow)="toggleCrossedRow($event)"
+  *ngIf="state.mode === Mode.ASSEMBLE"
+  [imageData]="state.imageData"
+  [(state)]="state.instructionsState"
 ></app-instructions>

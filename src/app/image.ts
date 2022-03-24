@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-import { HexColor, hexToRgb, rgbToHex, Tool } from '../state';
+import { HexColor, hexToRgb, requireNonNull, rgbToHex, Tool } from './state';
 
 interface DirtyArea {
   left: number;
@@ -41,34 +41,35 @@ function mergeDirtyAreas(
   }
 }
 
+export interface Operation {
+  tool: Tool;
+  color: HexColor;
+  x: number;
+  y: number;
+}
+
 /** Wrapper for CanvasRenderingContext2D with convenience editing functions.  */
-export class EditableContext2D {
-  constructor(readonly ctx: CanvasRenderingContext2D) {
-    this.imageData = new EditableImageData(
-      ctx.getImageData(0, 0, this.width, this.height)
-    );
+export class EditableCanvas {
+  constructor(
+    readonly canvas: HTMLCanvasElement,
+    readonly imageData: EditableImageData
+  ) {
+    this.canvas.width = imageData.width;
+    this.canvas.height = imageData.height;
+    this.ctx = getContext2D(this.canvas);
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(0, 0, imageData.width, imageData.height);
+    this.redraw();
   }
 
-  private imageData: EditableImageData;
+  private ctx: CanvasRenderingContext2D;
 
   get width() {
-    return this.ctx.canvas.width;
+    return this.imageData.width;
   }
 
   get height() {
-    return this.ctx.canvas.height;
-  }
-
-  resetToImage(img: HTMLImageElement) {
-    const { naturalHeight, naturalWidth } = img;
-    this.ctx.canvas.width = naturalWidth;
-    this.ctx.canvas.height = naturalHeight;
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.fillRect(0, 0, naturalWidth, naturalHeight);
-    this.ctx.drawImage(img, 0, 0);
-    this.imageData = new EditableImageData(
-      this.ctx.getImageData(0, 0, naturalWidth, naturalHeight)
-    );
+    return this.imageData.height;
   }
 
   count() {
@@ -79,41 +80,46 @@ export class EditableContext2D {
     return this.imageData.pixels();
   }
 
-  applyMany(operations: [Tool, HexColor, number, number][]) {
+  applyMany(operations: Operation[]) {
     const dirty = operations.reduce(
-      (dirtyArea, [tool, color, x, y]) =>
-        mergeDirtyAreas(
-          dirtyArea,
-          this.apply(this.imageData, tool, color, x, y)
-        ),
+      (dirtyArea, operation) =>
+        mergeDirtyAreas(dirtyArea, this.apply(this.imageData, operation)),
       null as DirtyArea | null
     );
 
     if (dirty) {
-      this.ctx.putImageData(
-        this.imageData.imageData,
-        0,
-        0,
-        dirty.left,
-        dirty.top,
-        dirty.right - dirty.left + 1,
-        dirty.bottom - dirty.top + 1
-      );
+      this.redraw(dirty);
     }
+  }
+
+  redraw(dirtyArea?: DirtyArea) {
+    dirtyArea ??= {
+      left: 0,
+      top: 0,
+      right: this.width - 1,
+      bottom: this.height - 1,
+    };
+
+    this.ctx.putImageData(
+      this.imageData.imageData,
+      0,
+      0,
+      dirtyArea.left,
+      dirtyArea.top,
+      dirtyArea.right - dirtyArea.left + 1,
+      dirtyArea.bottom - dirtyArea.top + 1
+    );
   }
 
   private apply(
     imageData: EditableImageData,
-    tool: Tool,
-    color: HexColor,
-    x: number,
-    y: number
+    { tool, color, x, y }: Operation
   ): DirtyArea | null {
     if (tool === Tool.DRAW) {
       return imageData.draw(x, y, color);
     } else if (tool === Tool.FILL) {
       return imageData.fill(x, y, color);
-    } else if (tool == Tool.MAGIC_WAND) {
+    } else if (tool === Tool.MAGIC_WAND) {
       return imageData.fill_all(x, y, color);
     } else {
       throw new Error(`Unknown tool ${tool}`);
@@ -126,7 +132,7 @@ export class EditableContext2D {
 }
 
 /** Wrapper for ImageData with convenience editing functions. */
-class EditableImageData {
+export class EditableImageData {
   #pixels: HexColor[][];
   #counter: Map<HexColor, number>;
 
@@ -144,6 +150,14 @@ class EditableImageData {
       }
       this.#pixels.push(row);
     }
+  }
+
+  get width() {
+    return this.imageData.width;
+  }
+
+  get height() {
+    return this.imageData.height;
   }
 
   private toIndex(x: number, y: number) {
@@ -250,4 +264,69 @@ class EditableImageData {
   count(): ReadonlyMap<HexColor, number> {
     return this.#counter;
   }
+
+  toDataURL() {
+    const canvas = createCanvas(this);
+    const ctx = getContext2D(canvas);
+    ctx.putImageData(this.imageData, 0, 0);
+    return canvas.toDataURL('image/png');
+  }
+
+  toPngBlob(): Promise<Blob> {
+    const canvas = createCanvas(this);
+    const ctx = getContext2D(canvas);
+    ctx.putImageData(this.imageData, 0, 0);
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Empty blob'));
+        }
+      }, 'image/png');
+    });
+  }
+
+  toImg(): HTMLImageElement {
+    const img = new Image();
+    img.src = this.toDataURL();
+    // Caution: assertTrue(img.complete) might be false!
+    return img;
+  }
+}
+
+function createCanvas({
+  width,
+  height,
+}: {
+  width: number;
+  height: number;
+}): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+export function getContext2D(canvas: HTMLCanvasElement) {
+  const ctx = requireNonNull(canvas.getContext('2d'));
+  ctx.imageSmoothingEnabled = false;
+  return ctx;
+}
+
+export function getImageData(img: HTMLImageElement): ImageData {
+  if (!img.complete) {
+    throw new Error('Cannot create EditableImageData from non-loaded img.');
+  }
+  if (!img.naturalHeight || !img.naturalWidth) {
+    throw new Error('Cannot create EditableImageData from empty image.');
+  }
+  const canvas = createCanvas({
+    width: img.naturalWidth,
+    height: img.naturalHeight,
+  });
+  const ctx = getContext2D(canvas);
+  ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
 }

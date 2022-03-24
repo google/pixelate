@@ -16,8 +16,9 @@
 
 import { Injectable } from '@angular/core';
 import {
+  DeepPartial,
   deserializeState,
-  PersistableState,
+  EditState,
   serializeState,
   StateSerializer,
 } from './state';
@@ -71,12 +72,12 @@ export class StorageService implements StateSerializer {
     window.localStorage.clear();
   }
 
-  async read(): Promise<Partial<PersistableState> | null> {
+  async read(): Promise<DeepPartial<EditState> | null> {
     const str = window.localStorage.getItem(STORAGE_KEY);
     return str ? deserializeState(str) : null;
   }
 
-  async save(state: PersistableState) {
+  async save(state: EditState) {
     window.localStorage.setItem(STORAGE_KEY, serializeState(state));
   }
 }
@@ -110,4 +111,34 @@ export function showFileDialog(callback: (file: File) => void) {
 export async function decodeBase64(base64Data: string): Promise<File> {
   const blob = await fetch(base64Data).then((res) => res.blob());
   return new File([blob], 'file.png', { type: 'image/png' });
+}
+
+export async function loadImageFile(
+  imageFile: File
+): Promise<HTMLImageElement> {
+  const img = new Image();
+  img.src = URL.createObjectURL(imageFile);
+  return waitForImage(img);
+}
+
+export function waitForImage(img: HTMLImageElement): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    img.onerror = (e) => {
+      reject(e);
+    };
+    if (img.complete) {
+      resolve(img);
+    } else {
+      img.onload = () => {
+        resolve(img);
+      };
+    }
+  });
+}
+
+export function downloadFile(file: File) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  a.click();
 }
