@@ -14,17 +14,24 @@
  limitations under the License.
  */
 
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import { CanvasEditorComponent } from './canvas-editor/canvas-editor.component';
+import { AfterViewInit, Component } from '@angular/core';
+import { EditableImageData, getImageData } from './image';
 import {
   ClipboardService,
-  decodeBase64,
+  downloadFile,
   DragDropService,
+  loadImageFile,
   showFileDialog,
   StorageService,
+  waitForImage,
 } from './io';
 import { UrlStateSerializer } from './routing';
-import { DEFAULT_STATE, HexColor, Mode, PersistableState } from './state';
+import {
+  EditState,
+  getDefaultDrawState,
+  Mode,
+  PersistableState,
+} from './state';
 
 @Component({
   selector: 'app-root',
@@ -34,15 +41,7 @@ import { DEFAULT_STATE, HexColor, Mode, PersistableState } from './state';
 export class AppComponent implements AfterViewInit {
   readonly Mode = Mode;
 
-  mode = Mode.DRAW;
-
-  @ViewChild(CanvasEditorComponent) canvas!: CanvasEditorComponent;
-
-  crossedOutColors = new Set<HexColor>();
-
-  crossedOutRows = new Set<number>();
-
-  crossedOutColumns = new Set<number>();
+  state: PersistableState = { mode: Mode.NEW };
 
   constructor(
     private readonly dragDropService: DragDropService,
@@ -51,31 +50,63 @@ export class AppComponent implements AfterViewInit {
     private readonly urlStateSerializer: UrlStateSerializer
   ) {}
 
+  async openImageFile(file: File) {
+    // TODO: Loading a new image into an existing PreprocessComponent currently does not change the
+    // image. Once this is fixed, remove the workaround that sets state to NEW first to force
+    // unloading and re-instantiating PreprocessComponent.
+    this.state = { mode: Mode.NEW };
+
+    // TODO: As performance improvement, downscale large images to the maximum size of
+    // PreprocessComponent. The image is frequently rescaled, precomputing a workable size greatly
+    // speeds up the UI for large input images.
+    const img = await loadImageFile(file);
+    const imageData = new EditableImageData(getImageData(img));
+    this.state = { ...getDefaultDrawState(), mode: Mode.PREPROCESS, imageData };
+  }
+
   async ngAfterViewInit() {
     this.dragDropService.registerDropHandler((file) => {
-      this.canvas.loadImageFile(file);
+      this.openImageFile(file);
     });
     this.clipboardService.registerPasteHandler((file) => {
-      this.canvas.loadImageFile(file);
+      this.openImageFile(file);
     });
 
     try {
       const loadedState =
         (await this.urlStateSerializer.read()) ??
         (await this.storageService.read());
-      await this.setPersistableState({ ...DEFAULT_STATE, ...loadedState });
+
+      if (loadedState?.imageData) {
+        const defaultState = getDefaultDrawState();
+        this.state = {
+          ...defaultState,
+          ...loadedState,
+          canvasEditorState: {
+            ...defaultState.canvasEditorState,
+            ...loadedState.canvasEditorState,
+          },
+          instructionsState: {
+            ...defaultState.instructionsState,
+            ...loadedState.instructionsState,
+          },
+        } as EditState;
+      }
     } finally {
       this.urlStateSerializer.clear();
     }
 
-    if (this.isMobile) {
+    if (this.isMobile && this.state.mode === Mode.DRAW) {
       // Draw experience is tough on mobile phones. Show Assembly view as default for now.
-      this.mode = Mode.ASSEMBLE;
+      this.state.mode = Mode.ASSEMBLE;
     }
 
     window.addEventListener('beforeunload', () => {
-      if (this.canvas.hasImage) {
-        this.storageService.save(this.getPersistableState());
+      const state = this.state;
+      if (hasImageData(state)) {
+        this.storageService.save(state);
+      } else {
+        this.storageService.clear();
       }
     });
   }
@@ -88,79 +119,80 @@ export class AppComponent implements AfterViewInit {
     );
   }
 
-  getPersistableState(): PersistableState {
-    return {
-      image: this.canvas.getDataURL(),
-      activeColor: this.canvas.activeColor,
-      mode: this.mode,
-      crossedOutColors: Array.from(this.crossedOutColors),
-      crossedOutColumns: Array.from(this.crossedOutColumns),
-      crossedOutRows: Array.from(this.crossedOutRows),
-    };
-  }
-
-  async setPersistableState(state: PersistableState) {
-    if (state.image) {
-      const file = await decodeBase64(state.image);
-      await this.canvas.loadImageFile(file);
-    }
-    this.mode = state.mode;
-    this.canvas.activeColor = state.activeColor;
-    this.crossedOutColors = new Set(state.crossedOutColors);
-    this.crossedOutRows = new Set(state.crossedOutRows);
-    this.crossedOutColumns = new Set(state.crossedOutColumns);
+  get hasImage() {
+    return hasImageData(this.state);
   }
 
   newFile() {
-    this.canvas.clear();
+    this.state = { mode: Mode.NEW };
     this.storageService.clear();
-    this.setPersistableState(DEFAULT_STATE);
+  }
+
+  openDrawMode(image: HTMLImageElement | EditableImageData) {
+    const imageData =
+      image instanceof EditableImageData
+        ? image
+        : new EditableImageData(getImageData(image));
+
+    this.state = {
+      ...getDefaultDrawState(),
+      imageData,
+    };
   }
 
   uploadFile() {
-    showFileDialog((file) => {
-      this.canvas.loadImageFile(file);
-    });
+    showFileDialog((file) => this.openImageFile(file));
   }
 
   async downloadPng() {
-    const file = await this.canvas.getFile();
+    if (!hasImageData(this.state)) {
+      throw new Error('copyImage requires imageData.');
+    }
+    const blob = await this.state.imageData.toPngBlob();
     const date = new Date().toISOString().slice(0, 10);
-
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(file);
-    a.download = `pixelate-${date}.png`;
-    a.click();
+    const file = new File([blob], `pixelate-${date}.png`);
+    downloadFile(file);
   }
 
   async copyImage() {
-    const blob = await this.canvas.getBlob();
+    if (!hasImageData(this.state)) {
+      throw new Error('copyImage requires imageData.');
+    }
+    const blob = await this.state.imageData.toPngBlob();
     const item = new ClipboardItem({ 'image/png': blob });
-    return navigator.clipboard.write([item]);
+    await navigator.clipboard.write([item]);
   }
 
   async copyUrl() {
-    const url = this.urlStateSerializer.makeURL(this.getPersistableState());
+    if (!hasImageData(this.state)) {
+      throw new Error('copyUrl requires persistableState');
+    }
+    const url = this.urlStateSerializer.makeURL(this.state);
     return navigator.clipboard.writeText(url);
   }
 
-  toggleCrossedColor(color: HexColor) {
-    toggle(color, this.crossedOutColors);
-  }
+  #cachedStateImg?: {
+    promise: Promise<HTMLImageElement>;
+    img: HTMLImageElement;
+  };
 
-  toggleCrossedRow(row: number) {
-    toggle(row, this.crossedOutRows);
-  }
-
-  toggleCrossedColumn(column: number) {
-    toggle(column, this.crossedOutColumns);
+  /** Returns a deduplicated Promise resolving to an <img> that loaded state.imageData. */
+  get stateImageDataAsImg(): Promise<HTMLImageElement> | undefined {
+    if (hasImageData(this.state)) {
+      const newImg = this.state.imageData.toImg();
+      if (this.#cachedStateImg?.img.src !== newImg.src) {
+        const promise = waitForImage(newImg);
+        this.#cachedStateImg = { img: newImg, promise };
+      }
+    }
+    return this.#cachedStateImg?.promise;
   }
 }
 
-function toggle<T>(value: T, set: Set<T>) {
-  if (set.has(value)) {
-    set.delete(value);
-  } else {
-    set.add(value);
-  }
+function hasImageData(state: PersistableState): state is EditState {
+  return (
+    state.mode === Mode.DRAW ||
+    state.mode === Mode.ASSEMBLE ||
+    state.mode === Mode.PREPROCESS
+  );
 }

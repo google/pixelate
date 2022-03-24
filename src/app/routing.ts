@@ -16,8 +16,9 @@
 
 import { Injectable } from '@angular/core';
 import {
+  DeepPartial,
   deserializeState,
-  PersistableState,
+  EditState,
   serializeState,
   StateSerializer,
 } from './state';
@@ -28,17 +29,17 @@ export class UrlStateSerializer implements StateSerializer {
     document.location.hash = '';
   }
 
-  makeURL(state: PersistableState) {
+  makeURL(state: EditState) {
     const url = new URL(window.location.toString());
     url.hash = `#${serializeState(state)}`;
     return url.toString();
   }
 
-  async save(state: PersistableState): Promise<void> {
+  async save(state: EditState): Promise<void> {
     document.location.hash = `#${serializeState(state)}`;
   }
 
-  async read(): Promise<Partial<PersistableState> | null> {
+  async read(): Promise<DeepPartial<EditState> | null> {
     const params = document.location.hash.slice(1);
     return params ? deserializeState(params) : null;
   }

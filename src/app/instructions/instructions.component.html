@@ -10,16 +10,16 @@
       <tbody>
         <tr
           *ngFor="let row of colors"
-          (click)="toggleBackgroundColor.next(row.color)"
+          (click)="toggleCrossedColor(row.color)"
           class="toggle-strikethrough"
-          [class.strikethrough]="crossedOutColors.has(row.color)"
+          [class.strikethrough]="state.crossedOutColors.has(row.color)"
         >
           <td
             [style]="{ backgroundColor: row.color }"
             class="text-center"
             [class]="textClasses.get(row.color)"
           >
-            {{ crossedOutColors.has(row.color) ? "" : row.index }}
+            {{ state.crossedOutColors.has(row.color) ? "" : row.index }}
           </td>
           <td class="text-right">{{ row.count }}</td>
         </tr>
@@ -44,27 +44,27 @@
       <td
         *ngFor="let c of pixels[0]; let index = index"
         class="toggle"
-        (click)="toggleColumn.next(index)"
+        (click)="toggleCrossedColumn(index)"
       >
         {{ index + 1 }}
       </td>
       <td></td>
     </tr>
     <tr *ngFor="let row of pixels; let rowI = index">
-      <td class="toggle" (click)="toggleRow.next(rowI)">
+      <td class="toggle" (click)="toggleCrossedRow(rowI)">
         {{ rowI + 1 }}
       </td>
       <td
         *ngFor="let color of row; let colI = index"
         [style]="{ backgroundColor: color }"
         [class.completed]="
-          crossedOutRows.has(rowI) || crossedOutColumns.has(colI)
+          state.crossedOutRows.has(rowI) || state.crossedOutColumns.has(colI)
         "
         [class]="textClasses.get(color)"
       >
-        {{ crossedOutColors.has(color) ? "" : indices.get(color) }}
+        {{ state.crossedOutColors.has(color) ? "" : indices.get(color) }}
       </td>
-      <td class="toggle" (click)="toggleRow.next(rowI)">
+      <td class="toggle" (click)="toggleCrossedRow(rowI)">
         {{ rowI + 1 }}
       </td>
     </tr>
@@ -73,7 +73,7 @@
       <td
         *ngFor="let c of pixels[0]; let index = index"
         class="toggle"
-        (click)="toggleColumn.next(index)"
+        (click)="toggleCrossedColumn(index)"
       >
         {{ index + 1 }}
       </td>

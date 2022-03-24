@@ -15,7 +15,8 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { HexColor, hexToRgb, isLightColor } from '../state';
+import { EditableImageData } from '../image';
+import { HexColor, hexToRgb, InstructionsState, isLightColor } from '../state';
 
 /** Instructions on how to assemble the pixel art mural. */
 @Component({
@@ -27,12 +28,12 @@ export class InstructionsComponent {
   #pixels: ReadonlyArray<ReadonlyArray<HexColor>> = [];
 
   @Input()
-  set pixels(pixels: ReadonlyArray<ReadonlyArray<HexColor>>) {
-    this.#pixels = pixels;
-    this.indices = new Map();
+  set imageData(imageData: EditableImageData) {
+    this.#pixels = imageData.pixels();
+    this.indices.clear();
     const counts = new Map<HexColor, number>();
 
-    for (const row of pixels) {
+    for (const row of this.#pixels) {
       for (const color of row) {
         let index = this.indices.get(color);
         if (index === undefined) {
@@ -65,27 +66,13 @@ export class InstructionsComponent {
 
   textClasses = new Map<HexColor, string>();
 
-  @Output()
-  readonly toggleBackgroundColor = new EventEmitter<HexColor>();
-
-  @Output()
-  readonly toggleRow = new EventEmitter<number>();
-
-  @Output()
-  readonly toggleColumn = new EventEmitter<number>();
-
   indices = new Map<HexColor, string>();
 
   colors: { color: HexColor; index: string; count: number }[] = [];
 
-  @Input()
-  crossedOutColors = new Set<HexColor>();
+  @Input() state!: InstructionsState;
 
-  @Input()
-  crossedOutRows = new Set<number>();
-
-  @Input()
-  crossedOutColumns = new Set<number>();
+  @Output() stateChange = new EventEmitter<InstructionsState>();
 
   get totalWidth() {
     return (this.pixels[0]?.length ?? 0) * 7.6;
@@ -98,7 +85,7 @@ export class InstructionsComponent {
   get totalCount() {
     return Array.from(this.colors.values()).reduce(
       (sum, entry) =>
-        sum + (this.crossedOutColors.has(entry.color) ? 0 : entry.count),
+        sum + (this.state.crossedOutColors.has(entry.color) ? 0 : entry.count),
       0
     );
   }
@@ -130,5 +117,28 @@ export class InstructionsComponent {
 
   isHalf(index: number, total: number) {
     return Math.trunc(total / 2) === index;
+  }
+
+  toggleCrossedColor(color: HexColor) {
+    toggle(color, this.state.crossedOutColors);
+    this.stateChange.next(this.state);
+  }
+
+  toggleCrossedRow(row: number) {
+    toggle(row, this.state.crossedOutRows);
+    this.stateChange.next(this.state);
+  }
+
+  toggleCrossedColumn(column: number) {
+    toggle(column, this.state.crossedOutColumns);
+    this.stateChange.next(this.state);
+  }
+}
+
+function toggle<T>(value: T, set: Set<T>) {
+  if (set.has(value)) {
+    set.delete(value);
+  } else {
+    set.add(value);
   }
 }

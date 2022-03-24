@@ -27,14 +27,21 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatSliderModule } from '@angular/material/slider';
 
 import { AppComponent } from './app.component';
 import { CanvasEditorComponent } from './canvas-editor/canvas-editor.component';
 import { ClipboardService, DragDropService, StorageService } from './io';
 import { UrlStateSerializer } from './routing';
+import { PreprocessComponent } from './preprocess/preprocess.component';
 
 @NgModule({
-  declarations: [AppComponent, CanvasEditorComponent, InstructionsComponent],
+  declarations: [
+    AppComponent,
+    CanvasEditorComponent,
+    InstructionsComponent,
+    PreprocessComponent,
+  ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -45,6 +52,7 @@ import { UrlStateSerializer } from './routing';
     MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
+    MatSliderModule,
     MatTabsModule,
     MatToolbarModule,
     MatTooltipModule,
