@@ -186,6 +186,10 @@ export class EditableImageData {
     this.imageData.data[i + 0] = rgb[0];
     this.imageData.data[i + 1] = rgb[1];
     this.imageData.data[i + 2] = rgb[2];
+
+    // Set to full opacity to allow drawing over transparent pixels.
+    this.imageData.data[i + 3] = 255;
+
     this.#pixels[y][x] = fillColor;
 
     const previousCount = (this.#counter.get(previous) ?? 0) - 1;
@@ -310,7 +314,7 @@ function createCanvas({
 }
 
 export function getContext2D(canvas: HTMLCanvasElement) {
-  const ctx = requireNonNull(canvas.getContext('2d'));
+  const ctx = requireNonNull(canvas.getContext('2d', { alpha: false }));
   ctx.imageSmoothingEnabled = false;
   return ctx;
 }
@@ -327,6 +331,13 @@ export function getImageData(img: HTMLImageElement): ImageData {
     height: img.naturalHeight,
   });
   const ctx = getContext2D(canvas);
+
+  // Fill with white before painting image to effectively remove opacity.
+  // Opacity is incompatile with the browser's native color picker, which
+  // would then pick the background color behind.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, img.naturalWidth, img.naturalHeight);
+
   ctx.drawImage(img, 0, 0);
   return ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
 }
