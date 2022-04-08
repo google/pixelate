@@ -17,16 +17,17 @@
 import { Component, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppModule } from '../app.module';
+import { EditableImageData, getImageData } from '../image';
 import { load1x1Img } from '../test_util';
 
 import { PreprocessComponent } from './preprocess.component';
 
 @Component({
-  template: `<app-preprocess [img]="img"></app-preprocess>`,
+  template: `<app-preprocess [imageData]="imageData"></app-preprocess>`,
 })
 class TestHostComponent {
   @Input()
-  img?: HTMLImageElement;
+  imageData?: EditableImageData;
 
   @ViewChild(PreprocessComponent)
   component!: PreprocessComponent;
@@ -49,7 +50,9 @@ describe('PreprocessComponent', () => {
   });
 
   it('should create', async () => {
-    hostComponent.img = await load1x1Img();
+    hostComponent.imageData = new EditableImageData(
+      getImageData(await load1x1Img())
+    );
     fixture.detectChanges(); // Runs OnInit.
 
     expect(hostComponent.component).toBeTruthy();

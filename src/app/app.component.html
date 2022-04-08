@@ -88,13 +88,11 @@
   <h2>Open, paste, or drop a small pixel art image.</h2>
 </div>
 
-<ng-container *ngIf="state.mode === Mode.PREPROCESS">
-  <app-preprocess
-    *ngIf="stateImageDataAsImg | async as img"
-    [img]="img"
-    (imageDataOnDestroy)="state.imageData = $event"
-  ></app-preprocess>
-</ng-container>
+<app-preprocess
+  *ngIf="state.mode === Mode.PREPROCESS"
+  [imageData]="state.imageData"
+  (imageDataOnDestroy)="state.imageData = $event"
+></app-preprocess>
 
 <app-canvas-editor
   #canvas

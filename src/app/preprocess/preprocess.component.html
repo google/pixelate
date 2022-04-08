@@ -9,7 +9,18 @@
     thumbLabel
     vertical
     [(ngModel)]="targetWidth"
-    (input)="targetWidth = $event.value!"
+    (input)="targetWidth = $event.value!; ngOnChanges()"
+  ></mat-slider>
+
+  Colors
+  <mat-slider
+    [min]="2"
+    [max]="maxTargetColors"
+    [step]="1"
+    thumbLabel
+    vertical
+    [(ngModel)]="targetColors"
+    (input)="targetColors = $event.value!; ngOnChanges()"
   ></mat-slider>
 
   <div class="spacer"></div>

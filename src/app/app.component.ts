@@ -23,7 +23,6 @@ import {
   loadImageFile,
   showFileDialog,
   StorageService,
-  waitForImage,
 } from './io';
 import { UrlStateSerializer } from './routing';
 import {
@@ -169,23 +168,6 @@ export class AppComponent implements AfterViewInit {
     }
     const url = this.urlStateSerializer.makeURL(this.state);
     return navigator.clipboard.writeText(url);
-  }
-
-  #cachedStateImg?: {
-    promise: Promise<HTMLImageElement>;
-    img: HTMLImageElement;
-  };
-
-  /** Returns a deduplicated Promise resolving to an <img> that loaded state.imageData. */
-  get stateImageDataAsImg(): Promise<HTMLImageElement> | undefined {
-    if (hasImageData(this.state)) {
-      const newImg = this.state.imageData.toImg();
-      if (this.#cachedStateImg?.img.src !== newImg.src) {
-        const promise = waitForImage(newImg);
-        this.#cachedStateImg = { img: newImg, promise };
-      }
-    }
-    return this.#cachedStateImg?.promise;
   }
 }
 
