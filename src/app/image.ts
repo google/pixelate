@@ -120,7 +120,7 @@ export class EditableCanvas {
     } else if (tool === Tool.FILL) {
       return imageData.fill(x, y, color);
     } else if (tool === Tool.MAGIC_WAND) {
-      return imageData.fill_all(x, y, color);
+      return imageData.fillAll(x, y, color);
     } else {
       throw new Error(`Unknown tool ${tool}`);
     }
@@ -243,13 +243,16 @@ export class EditableImageData {
     return dirtyArea;
   }
 
-  fill_all(x: number, y: number, fillColor: HexColor): DirtyArea | null {
-    const startColor = this.pick(x, y);
-    const dirtyArea: DirtyArea = { left: x, top: y, right: x, bottom: y };
+  fillAll(x: number, y: number, fillColor: HexColor): DirtyArea | null {
+    return this.replaceColor(this.pick(x, y), fillColor);
+  }
+
+  replaceColor(originalColor: HexColor, fillColor: HexColor): DirtyArea | null {
+    const dirtyArea: DirtyArea = { left: 0, top: 0, right: 0, bottom: 0 };
     for (let x = 0; x < this.imageData.width; x++) {
       for (let y = 0; y < this.imageData.height; y++) {
         const color = this.pick(x, y);
-        if (color === startColor) {
+        if (color === originalColor) {
           this.draw(x, y, fillColor);
           dirtyArea.left = Math.min(dirtyArea.left, x);
           dirtyArea.right = Math.max(dirtyArea.right, x);
@@ -340,4 +343,59 @@ export function getImageData(img: HTMLImageElement): ImageData {
 
   ctx.drawImage(img, 0, 0);
   return ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
+}
+
+export function colorDistance(a: HexColor, b: HexColor) {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+
+  return Math.abs(ar - br) + Math.abs(ag - bg) + Math.abs(ab - bb);
+}
+
+function min<T>(iterable: Iterable<T>, comparator: (a: T) => number) {
+  let minValue = undefined;
+  let minEntry = undefined;
+
+  for (const entry of iterable) {
+    const value = comparator(entry);
+    if (minValue === undefined || minValue > value) {
+      minValue = value;
+      minEntry = entry;
+    }
+  }
+
+  return minEntry;
+}
+
+export function downscale(
+  original: EditableImageData,
+  target: EditableImageData,
+  colorHint: number
+) {
+  const ratio = original.width / target.width;
+  // TODO: When the input image is aliased, picking the n most common color
+  // values is not ideal. There might be dozens of shades of one color, but
+  // each one with only a small count.
+  const originalColors = Array.from(original.count()).sort(
+    ([, a], [, b]) => b - a
+  );
+  const selectedColors = Array.from(
+    originalColors.slice(0, colorHint).map(([c]) => c)
+  );
+
+  // Divide the original image of width m into n blocks, where n ≤ m.
+  // Then, sample the center color from each block and draw the closest
+  // color to the target image.
+  for (let y = 0; y < target.height; y++) {
+    for (let x = 0; x < target.width; x++) {
+      const originalColor = original.pick(
+        Math.min(Math.trunc((x + 0.5) * ratio), original.width - 1),
+        Math.min(Math.trunc((y + 0.5) * ratio), original.height - 1)
+      );
+      const color = requireNonNull(
+        min(selectedColors, (c) => colorDistance(c, originalColor))
+      );
+      target.draw(x, y, color);
+    }
+  }
 }
