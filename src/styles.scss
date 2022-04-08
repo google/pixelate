@@ -109,6 +109,12 @@ mat-toolbar {
       flex-direction: column;
     }
 
+    .mat-button-toggle-group {
+      // Do not shrink toggle group when other elements in
+      // the menu are occupying space.
+      overflow: initial;
+    }
+
     .mat-button-toggle,
     .mat-button-toggle-group-appearance-standard,
     .mat-button-toggle-group-appearance-standard
