@@ -198,6 +198,7 @@ export class EditableImageData {
     } else {
       this.#counter.set(previous, previousCount);
     }
+    this.#counter.set(fillColor, (this.#counter.get(fillColor) ?? 0) + 1);
 
     return { left: x, top: y, right: x, bottom: y };
   }
