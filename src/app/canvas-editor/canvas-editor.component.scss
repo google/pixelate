@@ -43,7 +43,8 @@ canvas {
   display: flex;
   flex-direction: column;
   row-gap: 3px;
-  padding: 0 4px;
+  margin: 3px;
+  overflow-y: auto;
 
   .mat-button {
     padding: 0;
@@ -69,7 +70,7 @@ canvas {
     background: none;
     padding: 0;
     border-radius: 4px;
-    height: 42px;
+    height: 48px;
     width: 100%;
     border: none;
     overflow: hidden;
