@@ -29,6 +29,13 @@ import {
 import { downscale, EditableImageData, getContext2D } from '../image';
 import { requireNonNull } from '../state';
 
+enum Edge {
+  TOP = 'top',
+  RIGHT = 'right',
+  BOTTOM = 'bottom',
+  LEFT = 'left',
+}
+
 @Component({
   selector: 'app-preprocess',
   templateUrl: './preprocess.component.html',
@@ -37,15 +44,17 @@ import { requireNonNull } from '../state';
 export class PreprocessComponent
   implements OnInit, AfterViewInit, OnChanges, OnDestroy
 {
+  readonly Edge = Edge;
+
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
   private ctx!: CanvasRenderingContext2D;
 
-  readonly minTargetWidth = 8;
+  readonly minTargetScale = 8;
 
   targetColors = 20;
 
-  targetWidth = this.minTargetWidth;
+  targetScale = this.minTargetScale;
 
   @Input() imageData!: EditableImageData;
 
@@ -53,7 +62,7 @@ export class PreprocessComponent
   @Output()
   readonly imageDataOnDestroy = new EventEmitter<EditableImageData>();
 
-  get maxTargetWidth() {
+  get maxTargetScale() {
     return Math.min(80, this.imageData?.width ?? 80);
   }
 
@@ -61,36 +70,55 @@ export class PreprocessComponent
     return Math.min(20, this.imageData?.count().size ?? 20);
   }
 
-  get targetHeight() {
+  get scaledHeight() {
     return Math.round(
-      (this.imageData.height / this.imageData.width) * this.targetWidth
+      (this.imageData.height / this.imageData.width) * this.scaledWidth
     );
   }
 
+  get scaledWidth() {
+    return this.targetScale;
+  }
+
+  get croppedWidth() {
+    return this.scaledWidth - this.crops.left - this.crops.right;
+  }
+
+  get croppedHeight() {
+    return this.scaledHeight - this.crops.top - this.crops.bottom;
+  }
+
   get realWidth() {
-    return this.targetWidth * 7.6;
+    return this.croppedWidth * 7.6;
   }
 
   get realHeight() {
-    return this.targetHeight * 7.6;
+    return this.croppedHeight * 7.6;
   }
+
+  crops = {
+    [Edge.LEFT]: 0,
+    [Edge.RIGHT]: 0,
+    [Edge.TOP]: 0,
+    [Edge.BOTTOM]: 0,
+  };
 
   ngOnInit(): void {
     requireNonNull(this.imageData);
 
-    let targetWidth = this.imageData.width;
+    let targetScale = this.imageData.width;
 
-    if (targetWidth === 0) {
-      throw new Error('targetWidth is 0');
+    if (targetScale === 0) {
+      throw new Error('targetScale is 0');
     }
 
-    while (targetWidth > this.maxTargetWidth) {
-      targetWidth /= 2;
+    while (targetScale > this.maxTargetScale) {
+      targetScale /= 2;
     }
-    while (targetWidth < this.minTargetWidth) {
-      targetWidth *= 2;
+    while (targetScale < this.minTargetScale) {
+      targetScale *= 2;
     }
-    this.targetWidth = Math.round(targetWidth);
+    this.targetScale = Math.round(targetScale);
   }
 
   ngAfterViewInit(): void {
@@ -107,36 +135,84 @@ export class PreprocessComponent
       Math.max(
         1,
         Math.min(
-          (window.innerWidth / this.imageData.width) * 0.9,
-          (window.innerHeight / this.imageData.height) * 0.9,
+          (window.innerWidth - 200) / this.croppedWidth,
+          (window.innerHeight - 200) / this.croppedHeight,
           25
         )
       )
     );
-    this.canvas.nativeElement.style.width = `${this.imageData.width * zoom}px`;
-    this.canvas.nativeElement.style.height = `${
-      this.imageData.height * zoom
-    }px`;
+    this.canvas.nativeElement.style.width = `${this.croppedWidth * zoom}px`;
+    this.canvas.nativeElement.style.height = `${this.croppedHeight * zoom}px`;
 
-    const targetHeight = this.targetHeight;
-    this.ctx.canvas.width = this.targetWidth;
-    this.ctx.canvas.height = targetHeight;
+    this.ctx.canvas.width = this.croppedWidth;
+    this.ctx.canvas.height = this.croppedHeight;
     this.ctx.fillStyle = '#ffffff';
-    this.ctx.fillRect(0, 0, this.targetWidth, targetHeight);
+    this.ctx.fillRect(0, 0, this.croppedWidth, this.croppedHeight);
 
     // TODO: To reduce GC and improve performance, reuse one ImageData and change
     // the its size.
     const scaledImageData = new EditableImageData(
-      this.ctx.getImageData(0, 0, this.targetWidth, targetHeight)
+      new ImageData(this.scaledWidth, this.scaledHeight)
     );
+
     downscale(this.imageData, scaledImageData, this.targetColors);
-    this.ctx.putImageData(scaledImageData.imageData, 0, 0);
+
+    this.ctx.putImageData(
+      scaledImageData.imageData,
+      -this.crops[Edge.LEFT],
+      -this.crops[Edge.TOP],
+      0,
+      0,
+      this.scaledWidth,
+      this.scaledHeight
+    );
+  }
+
+  expand(edge: Edge) {
+    if (this.canExpand(edge)) {
+      this.crops[edge]--;
+      this.ngOnChanges();
+    }
+  }
+
+  shrink(edge: Edge) {
+    if (this.canShrink(edge)) {
+      this.crops[edge]++;
+      this.ngOnChanges();
+    }
+  }
+
+  canExpand(edge: Edge) {
+    return this.crops[edge] > 0;
+  }
+
+  canShrink(edge: Edge) {
+    if (edge === Edge.TOP || edge === Edge.BOTTOM) {
+      return (
+        this.crops[Edge.TOP] + this.crops[Edge.BOTTOM] < this.scaledHeight - 1
+      );
+    } else {
+      return (
+        this.crops[Edge.LEFT] + this.crops[Edge.RIGHT] < this.scaledWidth - 1
+      );
+    }
+  }
+
+  resizeTo(scaledWidth: number) {
+    this.targetScale = scaledWidth;
+    this.crops = {
+      [Edge.LEFT]: 0,
+      [Edge.RIGHT]: 0,
+      [Edge.TOP]: 0,
+      [Edge.BOTTOM]: 0,
+    };
+    this.ngOnChanges();
   }
 
   ngOnDestroy(): void {
     this.imageDataOnDestroy.next(
       new EditableImageData(
-        this.ctx.getImageData(0, 0, this.targetWidth, this.targetHeight)
+        this.ctx.getImageData(0, 0, this.croppedWidth, this.croppedHeight)
       )
     );
   }

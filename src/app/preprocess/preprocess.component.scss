@@ -16,12 +16,71 @@ mat-toolbar.vertical {
   }
 }
 
+$button-size: 36px;
+
 .scroll-container {
   flex: 1;
   display: flex;
+  align-items: center;
   overflow: auto;
 
-  & > * {
+  .canvas-buttons {
     margin: 0 auto;
+    position: relative;
+
+    canvas {
+      border: 1px solid var(--accent-border);
+    }
+
+    .expand-buttons {
+      display: flex;
+      position: absolute;
+
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+
+      &.expand-bottom {
+        top: initial;
+        bottom: -$button-size + 6px;
+      }
+
+      &.expand-top {
+        bottom: initial;
+        top: -$button-size;
+        transform: scale(-1, -1);
+      }
+
+      &.expand-left,
+      &.expand-right {
+        flex-direction: column;
+
+        .mat-button {
+          min-height: 64px;
+          line-height: 24px;
+          min-width: 0;
+          width: 36px;
+          padding: 16px 0;
+
+          mat-icon {
+            transform: rotate(90deg);
+          }
+        }
+      }
+
+      &.expand-left {
+        right: initial;
+        left: -$button-size;
+      }
+
+      &.expand-right {
+        left: initial;
+        right: -$button-size;
+        transform: scale(-1, -1);
+      }
+    }
   }
 }
