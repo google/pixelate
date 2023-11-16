@@ -4,12 +4,12 @@
   Size
   <mat-slider
     [min]="8"
-    [max]="maxTargetWidth"
+    [max]="maxTargetScale"
     [step]="1"
     thumbLabel
     vertical
-    [(ngModel)]="targetWidth"
-    (input)="targetWidth = $event.value!; ngOnChanges()"
+    [(ngModel)]="targetScale"
+    (input)="resizeTo($event.value!)"
   ></mat-slider>
 
   Colors
@@ -27,8 +27,8 @@
 
   <div class="details text-center">
     <div>
-      {{ targetWidth }} x
-      {{ targetHeight }}
+      {{ croppedWidth }} x
+      {{ croppedHeight }}
     </div>
     <div>
       {{ realWidth | number: "1.0-0" }} x {{ realHeight | number: "1.0-0" }} cm
@@ -37,5 +37,28 @@
 </mat-toolbar>
 
 <div class="scroll-container" #scrollContainer>
-  <canvas #canvas></canvas>
+  <div class="canvas-buttons">
+    <div
+      *ngFor="let entry of Edge | keyvalue"
+      class="expand-buttons expand-{{ entry.value }}"
+    >
+      <button
+        mat-button
+        (click)="shrink(entry.value)"
+        [disabled]="!canShrink(entry.value)"
+        [attr.aria-label]="'Shrink from ' + entry.value + ' edge'"
+      >
+        <mat-icon>expand_less</mat-icon>
+      </button>
+      <button
+        mat-button
+        (click)="expand(entry.value)"
+        [disabled]="!canExpand(entry.value)"
+        [attr.aria-label]="'Expand from ' + entry.value + ' edge'"
+      >
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </div>
+    <canvas #canvas></canvas>
+  </div>
 </div>
